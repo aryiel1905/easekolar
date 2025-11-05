@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "api/**.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "env": {
+    "CORS_ORIGIN": "https://<your-frontend-domain>"
+  }
+}
