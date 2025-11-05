@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scholarship System — EaseKolar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+  (function () {
+    const saved = localStorage.getItem('theme');
+    const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', saved || system);
+  })();
+  </script>
+
+  <style>
+    *{scroll-behavior:smooth; box-sizing:border-box}
+
+    /* ================== THEME TOKENS (Light by default) ================== */
+    :root{
+      --bg:#edf2f9;            /* page background */
+      --ink:#0d223a;           /* primary text */
+      --muted:#5f6c7b;         /* secondary text */
+      --panel:#ffffff;         /* surfaces */
+      --navy:#0d2240;          /* brand/nav */
+      --navy-600:#0b1b33;
+      --navy-700:#09172b;
+      --gold:#d4a61d;          /* CTA */
+      --gold-700:#b98c0c;
+      --chip:#eef3f9;          /* subtle pill bg */
+      --ring:rgba(13,34,64,.28);
+      --radius:18px;
+      --shadow-1:0 10px 24px rgba(13,30,54,.08);
+      --shadow-2:0 18px 44px rgba(13,30,54,.16);
+    }
+
+    /* ================== DARK THEME TOKENS ================== */
+    :root[data-theme="dark"]{
+      --bg:#0b1430;
+      --ink:#e9f1ff;
+      --muted:#b7c3e4;
+      --panel:#0e1c44;
+      --navy:#0e1c44;
+      --navy-600:#102553;
+      --navy-700:#09172b;
+      --gold:#e0b01a;
+      --gold-700:#c29300;
+      --chip:rgba(255,255,255,.06);
+      --ring:rgba(224,176,26,.35);
+      --shadow-1:0 10px 24px rgba(0,0,0,.45);
+      --shadow-2:0 18px 44px rgba(0,0,0,.55);
+    }
+
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(1200px 520px at -10% -10%, #f6f9ff 0%, rgba(246,249,255,0) 60%),
+        radial-gradient(900px 420px at 110% 0%, #f1f6ff 0%, rgba(241,246,255,0) 60%),
+        var(--bg);
+      line-height:1.55;
+    }
+
+    /* Dark background override */
+    html[data-theme="dark"] body{
+      background:
+        radial-gradient(1200px 520px at -10% -10%, #1b2b59 0%, rgba(27,43,89,0) 60%),
+        radial-gradient(900px 420px at 110% 0%, #142a5c 0%, rgba(20,42,92,0) 60%),
+        var(--bg);
+    }
+
+    img{max-width:100%; display:block}
+    a{color:inherit; text-decoration:none}
+    .container{width:min(1200px,92%); margin-inline:auto}
+
+    /* ================== NAVBAR ================== */
+    header.nav{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter:saturate(140%) blur(8px);
+      background:rgba(255,255,255,.78);
+      border-bottom:1px solid rgba(24,34,58,.06);
+    }
+    html[data-theme="dark"] header.nav{background:rgba(9,16,40,.82); border-bottom:1px solid rgba(255,255,255,.08)}
+
+    .nav-inner{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0}
+    .brand{display:flex; align-items:center; gap:.7rem; font-weight:800; letter-spacing:.2px; color:var(--ink)}
+    .badge{width:36px; height:36px; border-radius:12px; background:radial-gradient(60% 60% at 30% 30%, #9cc3ff 0%, #5aa6ff 45%, #2e7bd6 100%); color:#fff; display:grid; place-items:center; box-shadow:inset 0 1px 0 rgba(255,255,255,.7), 0 6px 14px rgba(46,123,214,.35)}
+    .links{display:flex; align-items:center; gap:6px}
+    .links a{padding:9px 12px; border-radius:12px; color:var(--muted); font-weight:600}
+    .links a[aria-current="page"], .links a:hover{background:rgba(13,34,64,.08); color:var(--ink)}
+    html[data-theme="dark"] .links a[aria-current="page"], html[data-theme="dark"] .links a:hover{background:rgba(255,255,255,.08); color:#fff}
+
+    .auth{display:flex; align-items:center; gap:8px}
+    .btn{display:inline-flex; align-items:center; justify-content:center; padding:10px 16px; border-radius:999px; border:1px solid rgba(24,34,58,.06); background:var(--panel); font-weight:700; color:var(--ink); box-shadow:var(--shadow-1); transition:transform .12s ease, box-shadow .2s ease}
+    .btn:hover{transform:translateY(-1px); box-shadow:var(--shadow-2)}
+    .btn-primary{background:var(--gold); color:#0a1a2f; border-color:transparent}
+    .btn-primary:hover{background:var(--gold-700)}
+
+    .hamburger{display:none; background:transparent; border:0; padding:8px; border-radius:10px}
+    .hamburger:focus-visible{outline:3px solid var(--ring)}
+    @media (max-width:860px){
+      .links{display:none}
+      .hamburger{display:inline-flex}
+      header.nav.open .links{display:grid; grid-auto-rows:1fr; gap:6px; padding:8px}
+      header.nav.open .nav-inner{align-items:start}
+      header.nav.open{background:rgba(255,255,255,.92)}
+      html[data-theme="dark"] header.nav.open{background:rgba(9,16,40,.92)}
+    }
+
+    /* ================== HERO ================== */
+    .hero{padding:26px 0 16px}
+    .hero-card{display:grid; grid-template-columns:1.2fr 1fr; gap:22px; align-items:center; padding:28px; border-radius:26px; overflow:hidden; position:relative; color:#fff; background: radial-gradient(1200px 600px at -10% 0%, #37527a 0%, rgba(55,82,122,0) 60%), linear-gradient(135deg, var(--navy) 0%, var(--navy-600) 60%, var(--navy-700) 100%); box-shadow:var(--shadow-2)}
+    .hero-card::after{content:""; position:absolute; inset:0; pointer-events:none; opacity:.15; background: radial-gradient(2px 2px at 20% 30%, #fff 50%, transparent 51%) repeat, radial-gradient(2px 2px at 60% 70%, #fff 50%, transparent 51%) repeat, radial-gradient(2px 2px at 80% 20%, #fff 50%, transparent 51%) repeat; background-size:220px 180px,200px 160px,260px 220px}
+    .hero-left h1{margin:0; font-size:clamp(2rem,2.6vw + 1.4rem,3.2rem); line-height:1.05}
+    .hero-left p{margin:.5rem 0 0; font-size:1.05rem; opacity:.95}
+    .hero-actions{margin-top:16px; display:flex; gap:10px; flex-wrap:wrap}
+    .hero-actions .btn{background:var(--panel); color:var(--ink)}
+    .hero-actions .btn-outline{background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.42)}
+    .hero-right{position:relative; aspect-ratio:4/3; display:grid; place-items:end}
+    .hero-img{width:min(520px,100%); filter:drop-shadow(0 18px 24px rgba(6,14,40,.28)); transform:translateY(4px)}
+
+    /* ================== GRID ================== */
+    .grid{display:grid; grid-template-columns:1.15fr 1fr 1fr; gap:18px; margin-top:18px}
+    @media (max-width:1040px){ .grid{grid-template-columns:1fr} }
+
+    .panel{background:var(--panel); border:1px solid rgba(24,34,58,.08); border-radius:22px; box-shadow:var(--shadow-1)}
+    html[data-theme="dark"] .panel{border-color:rgba(255,255,255,.14)}
+    .panel-header{display:flex; align-items:center; justify-content:space-between; padding:16px 18px 0}
+    .panel-header h3{margin:0; font-size:1.05rem; letter-spacing:.2px; color:var(--ink)}
+    .panel-body{padding:14px 18px 18px}
+
+    .card-row{display:grid; grid-template-columns:repeat(2,1fr); gap:14px}
+    .art-card{position:relative; border-radius:18px; overflow:hidden; height:180px; background:linear-gradient(135deg,#e8eef7,#f3f7ff); box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
+    html[data-theme="dark"] .art-card{background:linear-gradient(135deg,#122a55,#0f234a)}
+    .art-card img{width:100%; height:100%; object-fit:cover}
+    .art-meta{position:absolute; left:10px; bottom:10px; background:rgba(255,255,255,.9); border:1px solid rgba(24,34,58,.08); padding:6px 10px; font-size:.85rem; border-radius:12px; color:#1b2a46; font-weight:700}
+    html[data-theme="dark"] .art-meta{background:rgba(14,28,68,.85); color:#e9f1ff; border-color:rgba(255,255,255,.12)}
+
+    .search-list{display:grid; gap:10px}
+    .search-pill{display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; background:var(--chip); border:1px solid rgba(24,34,58,.08); box-shadow:inset 0 1px 0 rgba(255,255,255,.9); font-weight:600; color:var(--ink)}
+    html[data-theme="dark"] .search-pill{border-color:rgba(255,255,255,.12)}
+    .search-pill .key{flex:0 0 26px; height:26px; display:grid; place-items:center; border-radius:999px; background:#fff; border:1px solid rgba(24,34,58,.08); box-shadow:var(--shadow-1); font-size:.9rem}
+    html[data-theme="dark"] .search-pill .key{background:var(--panel); border-color:rgba(255,255,255,.14)}
+
+    .search-input{margin-top:6px; display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; background:#fff; border:1px solid rgba(24,34,58,.08); box-shadow:var(--shadow-1)}
+    .search-input input{width:100%; border:0; outline:0; font:inherit; color:var(--ink)}
+    html[data-theme="dark"] .search-input{background:var(--panel); border-color:rgba(255,255,255,.14)}
+
+    .close-circle{width:28px; height:28px; border-radius:999px; display:grid; place-items:center; font-weight:800; background:#fff; border:1px solid rgba(24,34,58,.08); box-shadow:var(--shadow-1); cursor:pointer}
+    html[data-theme="dark"] .close-circle{background:var(--panel); border-color:rgba(255,255,255,.14); color:var(--ink)}
+
+    .info-stack{display:grid; gap:12px}
+    .info-card{display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:center; background:var(--panel); padding:12px; border-radius:16px; border:1px solid rgba(24,34,58,.08); box-shadow:var(--shadow-1)}
+    html[data-theme="dark"] .info-card{border-color:rgba(255,255,255,.14)}
+    .info-ico{width:46px; height:46px; border-radius:14px; display:grid; place-items:center; font-size:1.2rem; background:linear-gradient(180deg,#f1f5fb,#ffffff); border:1px solid rgba(24,34,58,.08); box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+    html[data-theme="dark"] .info-ico{background:linear-gradient(180deg,#122a55,#0f234a); border-color:rgba(255,255,255,.14); color:#e9f1ff}
+    .info-card h4{margin:0; font-size:1rem; color:var(--ink)}
+    .info-card p{margin:2px 0 0; color:var(--muted); font-size:.92rem}
+
+    /* ================== SECTIONS ================== */
+    .section{padding:40px 0}
+    .section h2{margin:0 0 14px; color:var(--ink); font-size:clamp(1.4rem,1.8vw + .8rem,2rem)}
+    .features{display:grid; grid-template-columns:repeat(12,1fr); gap:16px}
+    .feat{grid-column:span 4; background:var(--panel); border:1px solid rgba(24,34,58,.08); border-radius:18px; padding:18px; box-shadow:var(--shadow-1)}
+    html[data-theme="dark"] .feat{border-color:rgba(255,255,255,.14)}
+    .feat .ico{font-size:26px; margin-bottom:8px}
+    @media (max-width:980px){ .feat{grid-column:span 6} }
+    @media (max-width:640px){ .feat{grid-column:span 12} }
+
+    .team-grid{display:grid; grid-template-columns:repeat(12,1fr); gap:16px}
+    .dev{grid-column:span 4; background:var(--panel); border:1px solid rgba(24,34,58,.08); border-radius:18px; padding:18px; box-shadow:var(--shadow-1)}
+    html[data-theme="dark"] .dev{border-color:rgba(255,255,255,.14)}
+    .dev-top{display:flex; align-items:center; gap:12px}
+    .avatar{width:56px; height:56px; border-radius:50%; display:grid; place-items:center; font-size:26px; background:radial-gradient(70% 80% at 30% 30%, #dfe6ff 0%, #bcd2ff 50%, #9fbefc 100%); color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.9); overflow:hidden}
+    .avatar img{width:100%; height:100%; object-fit:cover; display:block}
+    .role{color:var(--muted); margin:.2rem 0 0}
+    @media (max-width:980px){ .dev{grid-column:span 6} }
+    @media (max-width:640px){ .dev{grid-column:span 12} }
+
+    footer{margin-top:28px; background:var(--navy-700); color:#bcd6ea; padding:22px 0}
+    footer .container{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+    footer small{opacity:.95}
+
+    /* ================== MODAL ================== */
+    .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; justify-content:center; align-items:center; z-index:1000}
+    .modal{background:var(--panel); color:var(--ink); padding:2rem; border-radius:16px; box-shadow:var(--shadow-2); width:min(440px,92%); text-align:center}
+    .modal .btn-primary{margin-top:14px}
+
+    /* ===== Floating Theme Toggle (bottom-right) ===== */
+    .theme-fab{
+      position: fixed;
+      right: 18px;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      width: 56px; height: 56px;
+      border-radius: 999px;
+      display: inline-grid; place-items: center;
+      cursor: pointer; z-index: 1001;
+      background: var(--panel);
+      border: 1px solid rgba(24,34,58,.12);
+      color: var(--ink);
+      box-shadow: var(--shadow-2);
+      transition: transform .12s ease, box-shadow .2s ease;
+      user-select: none;
+    }
+    :root[data-theme="dark"] .theme-fab{ border-color: rgba(255,255,255,.14); }
+    .theme-fab:hover{ transform: translateY(-2px); }
+    .theme-fab:focus-visible{ outline: 3px solid var(--ring); outline-offset: 2px; }
+    @media print { .theme-fab{ display:none } }
+
+    /* focus styles */
+    .btn:focus-visible,.close-circle:focus-visible,.search-input input:focus-visible{outline:3px solid var(--ring); outline-offset:2px; border-radius:12px}
+  </style>
+</head>
+<body>
+  <!-- NAV -->
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="#home" aria-label="Scholarship System Home">
+        <span class="badge">🎓</span><span>Scholarship System</span>
+      </a>
+
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">☰</button>
+
+      <nav class="links" id="navLinks">
+        <a href="#home" aria-current="page">Home</a>
+        <a href="#features">Features</a>
+        <a href="#developers">Team</a>
+        <a href="#about">About</a>
+      </nav>
+
+      <!-- removed inline theme button -->
+
+      <div class="auth">
+        <a id="track-link" class="btn" href="track.html" style="display:none">Track</a>
+        <a id="signup-link" class="btn btn-primary" href="login-signup.html">Log in</a>
+        <a id="logout-link" class="btn" href="#home" style="display:none">Log out</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <main id="home" class="hero">
+    <div class="container hero-card">
+      <div class="hero-left">
+        <h1>EaseKolar</h1>
+        <p>Apply, track, and secure scholarships with clarity and speed — built for students and admins.</p>
+        <div class="hero-actions">
+          <a href="#" class="btn btn-primary" id="applyBtn">Apply now</a>
+          <a href="#features" class="btn btn-outline">How it works</a>
+        </div>
+      </div>
+      <div class="hero-right" aria-hidden="true">
+        <img src="images/kolarss.png" alt="" class="hero-img"/>
+      </div>
+    </div>
+
+    <!-- BELOW-HERO GRID -->
+    <div class="container grid" style="margin-top:18px">
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Highlights</h3>
+          <a href="scholarship.html" class="btn" style="padding:8px 12px">Explore</a>
+        </div>
+        <div class="panel-body">
+          <div class="card-row">
+            <article class="art-card">
+              <img src="images/kolarss.png" alt="Featured 1">
+              <span class="art-meta">Nanay Bing</span>
+            </article>
+            <article class="art-card">
+              <img src="images/kolarss.png" alt="Featured 2">
+              <span class="art-meta">Tulong Dunong</span>
+            </article>
+          </div>
+          <div class="view-more"><a href="scholarship.html">View more</a></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Recent Search</h3>
+          <span id="clearRecent" class="close-circle" title="Clear list">×</span>
+        </div>
+        <div class="panel-body">
+          <div class="search-list" id="recentList"></div>
+          <div class="search-input" style="margin-top:12px">
+            <span class="key">⌕</span>
+            <input id="homeSearchBox" type="text" placeholder="Search scholarships"/>
+            <button id="homeSearchBtn" class="btn btn-primary" style="padding:8px 14px">Search</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-header">
+          <h3>Quick Info</h3>
+          <span class="close-circle" title="Hide">×</span>
+        </div>
+        <div class="panel-body">
+          <div class="info-stack">
+            <div class="info-card">
+              <div class="info-ico">✅</div>
+              <div>
+                <h4>Eligibility</h4>
+                <p>Criteria by course, year level, residency, and income.</p>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-ico">📍</div>
+              <div>
+                <h4>Regions</h4>
+                <p>National and campus-specific grants available.</p>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-ico">🏛️</div>
+              <div>
+                <h4>Administration</h4>
+                <p>Reviews, scoring, and releases with audit trails.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <div class="container">
+      <h2>First Impressions</h2>
+      <div class="features">
+        <article class="feat">
+          <div class="ico">📖</div>
+          <h3>Easy Application</h3>
+          <p>Online forms with checklists, validation, and file guidance.</p>
+        </article>
+        <article class="feat">
+          <div class="ico">⚡</div>
+          <h3>Fast Processing</h3>
+          <p>Real-time status and notifications for students & reviewers.</p>
+        </article>
+        <article class="feat">
+          <div class="ico">🛡️</div>
+          <h3>Trusted Results</h3>
+          <p>Transparent criteria, audit logs, and documented decisions.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="section" id="about">
+    <div class="container">
+      <h2>Scholarships that Inspire</h2>
+      <p style="max-width:760px; color:var(--muted)">
+        Our application & monitoring platform helps students and administrators apply, review, and track awards with clarity.
+        Fewer steps, faster results, and transparent progress—built for trust.
+      </p>
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section class="section" id="developers">
+    <div class="container">
+      <h2>Our Team</h2>
+      <div class="team-grid">
+        <article class="dev">
+          <div class="dev-top">
+            <div class="avatar">
+              <img src="images/rhonie.jpg" alt="Rhonielyn Mhei B. Tolentino" loading="lazy" decoding="async">
+            </div>
+            <div>
+              <h3 style="margin:0"><a href="https://www.facebook.com/tolentino.rmb">Rhonielyn Mhei B. Tolentino</a></h3>
+              <p class="role">Frontend Developer</p>
+            </div>
+          </div>
+          <p>UI polish, accessibility, and component systems for crisp, effortless interfaces.</p>
+        </article>
+
+        <article class="dev">
+          <div class="dev-top">
+            <div class="avatar">
+              <img src="images/joshua.jpg" alt="Joshua Tenorio" loading="lazy" decoding="async">
+            </div>
+            <div>
+              <h3 style="margin:0"><a href="https://www.facebook.com/joshua.tenorio.891241?mibextid=ZbWKwL">Joshua Tenorio</a></h3>
+              <p class="role">Backend & Integrations</p>
+            </div>
+          </div>
+          <p>Fast, secure APIs that keep services connected and pipelines automated.</p>
+        </article>
+
+        <article class="dev">
+          <div class="dev-top">
+            <div class="avatar">
+              <img src="images/aurelio.jpg" alt="Aurelio Tadena II" loading="lazy" decoding="async">
+            </div>
+            <div>
+              <h3 style="margin:0"><a href="https://www.facebook.com/dio.tadena.10?mibextid=ZbWKwL">Aurelio Tadena II</a></h3>
+              <p class="role">Product & QA</p>
+            </div>
+          </div>
+          <p>Championing quality and the final 1% that makes the experience feel complete.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <small>© 2025 Scholarship System · President Ramon Magsaysay State University</small>
+      <small>Built with ❤️ for students and supporting teams</small>
+    </div>
+  </footer>
+
+  <!-- MODAL -->
+  <div id="messageModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="messageTitle" aria-describedby="messageContent">
+    <div class="modal">
+      <h3 id="messageTitle" style="margin-top:0"></h3>
+      <p id="messageContent"></p>
+      <button id="modalOk" class="btn btn-primary">OK</button>
+    </div>
+  </div>
+
+  <!-- Floating Theme Toggle -->
+  <button id="themeToggle" class="theme-fab" aria-label="Switch to dark mode" aria-pressed="false" title="Toggle theme">🌙</button>
+
+  <script>
+    // ====== Theme Toggle ======
+    const htmlEl = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function applyTheme(mode){
+      htmlEl.setAttribute('data-theme', mode);
+      localStorage.setItem('theme', mode);
+      const isDark = mode === 'dark';
+      if (btn) {
+        btn.textContent = isDark ? '☀️' : '🌙';
+        btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        btn.setAttribute('aria-pressed', String(isDark));
+      }
+    }
+
+    // initial
+    applyTheme(htmlEl.getAttribute('data-theme') || 'light');
+
+    // click
+    btn?.addEventListener('click', () => {
+      const next = htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+    });
+
+    // keep multiple tabs/windows in sync
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'theme' && e.newValue) applyTheme(e.newValue);
+    });
+
+    // Follow system changes if user hasn't chosen
+    prefersDark?.addEventListener?.('change', (e) => {
+      if(!localStorage.getItem('theme')){
+        applyTheme(e.matches ? 'dark' : 'light');
+      }
+    });
+
+    // ====== Modal helpers ======
+    function showMessageModal(title, content){
+      document.getElementById('messageTitle').textContent = title;
+      document.getElementById('messageContent').textContent = content;
+      document.getElementById('messageModal').style.display = 'flex';
+    }
+    function closeModal(){ document.getElementById('messageModal').style.display = 'none'; }
+    document.getElementById('modalOk').addEventListener('click', () => { closeModal(); window.location.href='login-signup.html'; });
+
+    // ====== Auth actions ======
+    const applyBtn = document.getElementById('applyBtn');
+    applyBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if(localStorage.getItem('loggedIn') === 'true'){
+        window.location.href = 'scholarship.html';
+      }else{
+        showMessageModal('Login Required', 'You must log in first before applying.');
+      }
+    });
+
+    function logout(){
+      localStorage.removeItem('loggedIn');
+      showMessageModal('Logout Successful', 'You have been logged out.');
+      setTimeout(() => location.reload(), 900);
+    }
+    window.logout = logout; // expose for header link
+
+    function syncAuthLinks(){
+      const loggedIn = localStorage.getItem('loggedIn');
+      const trackLink = document.getElementById('track-link');
+      const loginLink = document.getElementById('login-link'); // may be null
+      const signupLink = document.getElementById('signup-link');
+      const logoutLink = document.getElementById('logout-link');
+      if(loggedIn === 'true'){
+        trackLink.style.display = 'inline-flex';
+        if (loginLink) loginLink.style.display = 'none';
+        signupLink.style.display = 'none';
+        logoutLink.style.display = 'inline-flex';
+      }else{
+        trackLink.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'inline-flex';
+        signupLink.style.display = 'inline-flex';
+        logoutLink.style.display = 'none';
+      }
+    }
+
+    // ====== Mobile nav ======
+    const nav = document.getElementById('nav');
+    const hamburger = document.getElementById('hamburger');
+    hamburger?.addEventListener('click', () => {
+      const open = nav.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', String(open));
+    });
+
+    window.addEventListener('load', syncAuthLinks);
+  </script>
+
+  <!-- ====== Search wiring (Home -> scholarship.html?q=) + Recent Searches ====== -->
+  <script>
+    const RECENT_KEY = 'recentSearches';
+
+    function getRecents(){
+      try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveRecent(q){
+      if(!q) return;
+      const arr = getRecents();
+      const next = [q, ...arr.filter(v => v.toLowerCase() !== q.toLowerCase())].slice(0,6);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+    }
+    function renderRecents(){
+      const box = document.getElementById('recentList');
+      if(!box) return;
+      const arr = getRecents();
+      box.innerHTML = arr.length ? '' : '<div style="color:var(--muted)">No recent searches yet.</div>';
+      arr.forEach(q => {
+        const pill = document.createElement('div');
+        pill.className = 'search-pill';
+        pill.innerHTML = `<span class="key">🔎</span> ${q}`;
+        pill.tabIndex = 0;
+        pill.addEventListener('click', () => goToResults(q));
+        pill.addEventListener('keypress', (e)=>{ if(e.key==='Enter') goToResults(q); });
+        box.appendChild(pill);
+      });
+    }
+
+    function goToResults(query){
+    var input = document.getElementById('homeSearchBox');
+    // Avoid ?? and ?. for older browsers
+    var qSource = (query !== null && query !== undefined) ? String(query) : (input ? input.value : '');
+    var q = (qSource || '').trim();
+
+    if (!q) {
+      if (input) input.focus();
+      return;
+    }
+
+    // Only call saveRecent if it exists
+    if (typeof window.saveRecent === 'function') {
+      window.saveRecent(q);
+    }
+
+    window.location.href = 'scholarship.html?q=' + encodeURIComponent(q);
+  }
+
+    (function initHomeSearch(){
+      const input = document.getElementById('homeSearchBox');
+      const btn = document.getElementById('homeSearchBtn');
+      const clearBtn = document.getElementById('clearRecent');
+
+      btn?.addEventListener('click', () => goToResults());
+      input?.addEventListener('keypress', (e) => { if(e.key === 'Enter') goToResults(); });
+      clearBtn?.addEventListener('click', () => { localStorage.removeItem(RECENT_KEY); renderRecents(); });
+
+      renderRecents();
+    })();
+  </script>
+
+</body>
+</html>

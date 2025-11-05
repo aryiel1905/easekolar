@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EaseKolar – Login / Sign Up</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+<!-- ✅ Flatpickr CSS (fixes the calendar layout/arrows) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+
+<style>
+  :root{
+    --page-start:#0a1430; --page-end:#081127; --stage-bg:#0c1a37;
+    --panel:#121e3c; --panel-2:#0f1a36; --border:#26345a;
+    --text:#e9eeff; --muted:#a2acc9;
+    --gold-1:#F2C335; --gold-2:#D1A30F;
+    --radius-xl:28px; --shadow-1:0 10px 30px rgba(3,10,30,.25);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;}
+  body{
+    min-height:100svh;width:100vw;overflow-x:hidden;
+    background:radial-gradient(1400px 700px at 50% -10%,#12224a 0%,var(--page-start) 45%,var(--page-end) 100%);
+    color:var(--text);display:grid;place-items:center;padding:clamp(12px,2vw,18px);
+  }
+  .stage{width:min(1200px,80vw);height:min(860px,80svh);
+    background:var(--stage-bg);border-radius:calc(var(--radius-xl) + 10px);
+    padding:clamp(10px,1.8vw,16px);box-shadow:var(--shadow-1);}
+  .shell{height:100%;display:grid;grid-template-columns:1.15fr 1fr;
+    background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.02));
+    border-radius:var(--radius-xl);overflow:hidden;}
+  .art{position:relative;background:url("images/logs.jpg") center/cover no-repeat;}
+  .art::before{content:"";position:absolute;inset:0;background:
+      radial-gradient(140px 90px at 18% 22%,rgba(255,255,255,.18) 0%,transparent 60%),
+      radial-gradient(180px 130px at 90% 70%,rgba(255,255,255,.14) 0%,transparent 65%),
+      linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.32));}
+  .art::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);pointer-events:none;}
+  .art-copy{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#f5f8ff;padding:clamp(16px,3vw,32px);} 
+  .art h2{font-size:clamp(26px,3.2vw,40px);font-weight:800;letter-spacing:.2px;text-shadow:0 6px 22px rgba(0,0,0,.45);} 
+  .art p{margin-top:8px;color:#cfe1ff;font-weight:500;}
+  .card{background:var(--panel);border-left:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;padding:clamp(22px,3.5vw,44px);}
+  .stack{width:min(520px,92%);} 
+  .card h1{font-size:clamp(22px,2.4vw,30px);margin-bottom:6px;} 
+  .card .sub{color:var(--muted);margin-bottom:18px;}
+
+  /* ✅ SCOPE form controls so they don't affect Flatpickr internals */
+  .stack label{display:block;font-size:13px;font-weight:600;margin-top:10px;margin-bottom:6px;color:#d4dcf4;}
+  .stack input,
+  .stack select{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:15px;
+    color:var(--text);
+    outline:none;
+    transition:border-color .2s,box-shadow .2s;
+    appearance:none;
+  }
+  .stack input::placeholder{color:var(--muted);} 
+  .stack input:focus,
+  .stack select:focus{border-color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.18);} 
+
+  .btn{border:none;cursor:pointer;border-radius:14px;padding:12px 16px;font-weight:800;transition:filter .2s,transform .02s;} 
+  .btn:active{transform:translateY(1px);} 
+  .btn-gold{width:100%;margin-top:14px;background:linear-gradient(180deg,var(--gold-1),var(--gold-2));color:#111827;} 
+  .row{display:flex;align-items:center;gap:10px;margin-top:12px;} 
+  .switch{margin-top:16px;font-size:14px;color:var(--muted);} 
+  .switch button{background:transparent;color:#ffe082;border:none;font-weight:800;cursor:pointer;}
+  .hidden{display:none !important;}
+
+  /* ✅ Flatpickr isolation (prevents weird stretching/positioning) */
+  .flatpickr-calendar{ z-index: 9999; font-family: inherit; }
+  .flatpickr-calendar .numInput,
+  .flatpickr-calendar select{ width:auto; background:transparent; border:none; box-shadow:none; padding:0; }
+  .flatpickr-months .flatpickr-prev-month,
+  .flatpickr-months .flatpickr-next-month{ width:32px; height:32px; }
+  .flatpickr-months .flatpickr-prev-month svg,
+  .flatpickr-months .flatpickr-next-month svg{ width:14px; height:14px; }
+
+  @media (max-width:980px){
+    .stage{width:min(1000px,92vw);height:min(900px,86svh);} 
+    .shell{grid-template-columns:1fr;} 
+    .art{min-height:38vh;} 
+    .card{padding:clamp(18px,4vw,28px);border-left:none;border-top:1px solid var(--border);} 
+  }
+
+  /* ✅ Notice Modal Styling */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: grid;
+  place-items: center;
+  z-index: 99999;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-1);
+  padding: 28px 32px;
+  width: min(90%, 400px);
+  text-align: center;
+}
+
+.modal-content p {
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+/* ✨ Modal Animation */
+@keyframes modalShow {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-content {
+  animation: modalShow 0.25s ease forwards;
+  transform-origin: center;
+}
+
+</style>
+</head>
+<body>
+
+  <div class="stage">
+    <div class="shell" id="shell">
+      <!-- Photo / welcome side -->
+      <section class="art" aria-hidden="true">
+        <div class="art-copy">
+          <div>
+            <h2 id="artTitle">Welcome back!</h2>
+            <p id="artSub">Let’s pick up where you left off.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CARD: Sign In -->
+      <section class="card" id="loginCard" aria-labelledby="loginTitle">
+        <div class="stack">
+          <form id="login-form" novalidate>
+            <label for="email">Email</label>
+            <input id="email" type="email" placeholder="you@example.com" required>
+
+            <label for="password">Password</label>
+            <input id="password" type="password" placeholder="••••••••" required>
+
+            <button class="btn btn-gold" type="submit">Log In</button>
+          </form>
+
+          <p class="switch">New here?
+            <button id="toSignup" type="button">Create an account</button>
+          </p>
+        </div>
+      </section>
+
+      <!-- CARD: Sign Up -->
+      <section class="card hidden" id="signupCard" aria-labelledby="signupTitle">
+        <div class="stack">
+          <form id="signup-form" novalidate>
+            <label for="signup-fullname">Full Name</label>
+            <input id="signup-fullname" type="text" placeholder="Jane Doe" required>
+
+            <label for="signup-email">Email</label>
+            <input id="signup-email" type="email" placeholder="you@example.com" required>
+
+            <label for="signup-password">Password</label>
+            <input id="signup-password" type="password" placeholder="••••••••" required>
+
+            <!-- Birthdate + Age -->
+            <div class="row">
+              <div style="flex:1; margin-right:8px;">
+                <label for="signup-birthdate">Birthdate</label>
+                <input id="signup-birthdate" type="date" required>
+              </div>
+              <div style="flex:1; margin-left:8px;">
+                <label for="signup-age">Age</label>
+                <input id="signup-age" type="number" min="1" placeholder="18" required>
+              </div>
+            </div>
+
+            <!-- Student Number + Phone -->
+            <div class="row">
+              <div style="flex:1; margin-right:8px;">
+                <label for="signup-studentnumber">Student Number</label>
+                <input id="signup-studentnumber" type="text" placeholder="XX-X-X-XXXX" required>
+              </div>
+              <div style="flex:1; margin-left:8px;">
+                <label for="signup-phone">Phone Number</label>
+                <input id="signup-phone" type="tel" placeholder="09XXXXXXXXX" required>
+              </div>
+            </div>
+
+            <!-- Campus Dropdown -->
+            <label for="signup-campus">Campus</label>
+            <select id="signup-campus" required>
+              <option value="">Select Campus</option>
+              <option value="PRMSU Iba"> PRMSU Iba</option>
+              <option value="PRMSU Castillejos">PRMSU Castillejos</option>
+              <option value="PRMSU San Marcelino">PRMSU San Marcelino</option>
+              <option value="PRMSU Botolan">PRMSU Botolan</option>
+              <option value="PRMSU Candelaria">PRMSU Candelaria</option>
+              <option value="PRMSU Masinloc">PRMSU Masinloc</option>
+              <option value="PRMSU Sta. Cruz">PRMSU Sta. Cruz</option>
+            </select>
+
+            <!-- College Dropdown -->
+            <label for="signup-college">College / Department</label>
+            <select id="signup-college" required>
+              <option value="">Select College</option>
+            </select>
+
+            <!-- Course Dropdown -->
+            <label for="signup-course">Course</label>
+            <select id="signup-course" required>
+              <option value="">Select Course</option>
+            </select>
+
+            <button class="btn btn-gold" type="submit">Sign Up</button>
+          </form>
+
+          <p class="switch">Already have an account?
+            <button id="toLogin" type="button">Log in</button>
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Flatpickr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <script>
+    // Attach flatpickr to the birthdate field (keeps your HTML5 fallback)
+    flatpickr("#signup-birthdate", {
+      dateFormat: "m/d/Y"
+    });
+
+    // Campus → College → Course Data
+    const campusData = {
+      "PRMSU Iba": {
+        "College of Business, Accountancy and Public Administration (CBAPA)": [
+          "Bachelor of Science in Accountancy",
+          "Bachelor of Science in Accounting Information System",
+          "Bachelor of Science in Business Administration Major in Financial Management",
+          "Bachelor of Science in Business Administration Major in Human Resource Management",
+          "Bachelor of Science in Business Administration Major in Marketing Management",
+          "Bachelor of Science in Public Administration"
+        ],
+        "College of Tourism and Hospitality Management (CTHM)": [
+          "Bachelor of Science in Tourism Management",
+          "Bachelor of Science in Hospitality Management"
+        ],
+        "College of Arts and Sciences (CAS)": [
+          "Bachelor of Science in Biology",
+          "Bachelor of Science in Psychology"
+        ],
+        "College of Agriculture and Forestry (CAF)": [
+          "Bachelor of Science in Environmental Science"
+        ],
+        "College of Industrial Technology (CIT)": [
+          "Bachelor of Science in Industrial Technology",
+          "Bachelor of Technical Vocational Teacher Education",
+          "Bachelor of Technology and Livelihood Education"
+        ],
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Computer Science",
+          "Bachelor of Science in Information Technology"
+        ],
+        "College of Nursing (CON)": [
+          "Bachelor of Science in Nursing"
+        ],
+        "College of Engineering (COE)": [
+          "Bachelor of Science in Electrical Engineering",
+          "Bachelor of Science in Civil Engineering",
+          "Bachelor of Science in Mechanical Engineering",
+          "Bachelor of Science in Computer Engineering"
+        ]
+      },
+      "PRMSU Castillejos": {
+        "College of Business, Accountancy and Public Administration (CBAPA)": [
+          "Bachelor of Science in Business Administration Major in Human Resource Management"
+        ]
+      },
+      "PRMSU San Marcelino": {
+        "College of Agriculture and Forestry (CAF)": [
+          "Bachelor of Science in Agriculture",
+          "Bachelor of Science in Agricultural Technology"
+        ],
+        "College of Tourism and Hospitality Management (CTHM)": [
+          "Bachelor of Science in Hospitality Management"
+        ],
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Computer Science"
+        ]
+      },
+      "PRMSU Botolan": {
+        "College of Agriculture and Forestry (CAF)": [
+          "Bachelor of Science in Agriculture",
+          "Bachelor of Science in Forestry"
+        ]
+      },
+      "PRMSU Candelaria": {
+        "College of Agriculture and Forestry (CAF)": [
+          "Bachelor of Science in Fisheries"
+        ],
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Information Technology"
+        ]
+      },
+      "PRMSU Masinloc": {
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Information Technology"
+        ],
+        "College of Business, Accountancy and Public Administration (CBAPA)": [
+          "Bachelor of Science in Business Administration Major in Human Resource Management"
+        ]
+      },
+      "PRMSU Sta. Cruz": {
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Computer Science"
+        ]
+      }
+    };
+
+    const campusSelect = document.getElementById("signup-campus");
+    const collegeSelect = document.getElementById("signup-college");
+    const courseSelect = document.getElementById("signup-course");
+
+    // Populate colleges when campus changes
+    campusSelect.addEventListener("change", function () {
+      const selectedCampus = this.value;
+      collegeSelect.innerHTML = "<option value=''>Select College</option>";
+      courseSelect.innerHTML = "<option value=''>Select Course</option>";
+      if (campusData[selectedCampus]) {
+        Object.keys(campusData[selectedCampus]).forEach(college => {
+          const option = document.createElement("option");
+          option.value = college;
+          option.textContent = college;
+          collegeSelect.appendChild(option);
+        });
+      }
+    });
+
+    // Populate courses when college changes
+    collegeSelect.addEventListener("change", function () {
+      const selectedCampus = campusSelect.value;
+      const selectedCollege = this.value;
+      courseSelect.innerHTML = "<option value=''>Select Course</option>";
+      if (campusData[selectedCampus] && campusData[selectedCampus][selectedCollege]) {
+        campusData[selectedCampus][selectedCollege].forEach(course => {
+          const option = document.createElement("option");
+          option.value = course;
+          option.textContent = course;
+          courseSelect.appendChild(option);
+        });
+      }
+    });
+  </script>
+
+
+    </div>
+  </div>
+
+    <!-- ✅ Notice Modal -->
+<div id="noticeModal" class="modal hidden">
+  <div class="modal-content">
+    <p id="modalMessage"></p>
+    <button id="modalClose" class="btn btn-gold">OK</button>
+  </div>
+</div>
+
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Supabase setup
+const { createClient } = window.supabase;
+const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcm5xa29venNsb2VxenhwZ2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1ODQ5MjgsImV4cCI6MjA3NTE2MDkyOH0.E4Lp4LtyvRfFoImUkZMFyVBM7sro4aoNlQEa7sUIsIs";
+const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// --- Modal notice ---
+const modal = document.getElementById("noticeModal");
+const modalMsg = document.getElementById("modalMessage");
+const modalClose = document.getElementById("modalClose");
+
+function showNotice(msg) {
+  modalMsg.textContent = msg;
+  modal.classList.remove("hidden");
+}
+modalClose.addEventListener("click", () => modal.classList.add("hidden"));
+
+// --- Button busy helper ---
+const btnBusy = (btn, busy) => { btn.disabled = busy; btn.style.filter = busy ? 'grayscale(0.3)' : ''; };
+
+// --- Switch between Login/Signup ---
+const loginCard = document.getElementById('loginCard');
+const signupCard = document.getElementById('signupCard');
+const artTitle = document.getElementById('artTitle');
+const artSub = document.getElementById('artSub');
+
+document.getElementById('toSignup').addEventListener('click', () => {
+  loginCard.classList.add('hidden');
+  signupCard.classList.remove('hidden');
+  artTitle.textContent = "Let's get started!";
+  artSub.textContent = "Create your account in seconds.";
+});
+
+document.getElementById('toLogin').addEventListener('click', () => {
+  signupCard.classList.add('hidden');
+  loginCard.classList.remove('hidden');
+  artTitle.textContent = "Welcome back!";
+  artSub.textContent = "Let’s pick up where you left off.";
+});
+
+// --- SIGN UP ---
+document.getElementById('signup-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.submitter;
+  btnBusy(btn, true);
+
+  const fullname = document.getElementById('signup-fullname').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const birthdate = document.getElementById('signup-birthdate').value;
+  const age = document.getElementById('signup-age').value.trim();
+  const studentNumber = document.getElementById('signup-studentnumber').value.trim();
+  const phone = document.getElementById('signup-phone').value.trim();
+  const campus = document.getElementById('signup-campus').value.trim();
+  const college = document.getElementById('signup-college').value.trim();
+  const course = document.getElementById('signup-course').value.trim();
+
+  // ✅ Validate student number format: XX-X-X-XXXX
+  const studentNumberPattern = /^\d{2}-\d-\d-\d{4}$/;
+  if (!studentNumberPattern.test(studentNumber)) {
+    showNotice("❌ Invalid Student ID Number.\nUse the format: XX-X-X-XXXX (e.g., 23-1-2-0123)");
+    btnBusy(btn, false);
+    return;
+  }
+
+  try {
+    // 1️⃣ Create Supabase Auth Account
+    const { error: authError } = await supa.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullname,
+          campus,
+          college,
+          course,
+          student_number: studentNumber,
+          phone_number: phone,
+          birthdate,
+          age,
+          role: 'applicant'
+        },
+        emailRedirectTo: `${location.origin}/student.html`
+      }
+    });
+    if (authError) throw authError;
+
+    // 2️⃣ Insert into applicants_main
+    const applicantData = {
+      full_name: fullname,
+      email,
+      password,
+      birthdate,
+      age,
+      student_number: studentNumber,
+      phone_number: phone,
+      campus,
+      college,
+      course,
+      created_at: new Date().toISOString()
+    };
+    const { error: mainError } = await supa.from('applicants_main').insert([applicantData]);
+    if (mainError) throw mainError;
+
+    // 3️⃣ Insert into campus-specific table
+    const campusTable = {
+      "PRMSU Iba": "applicants_iba",
+      "PRMSU Castillejos": "applicants_castillejos",
+      "PRMSU San Marcelino": "applicants_sanmarcelino",
+      "PRMSU Botolan": "applicants_botolan",
+      "PRMSU Candelaria": "applicants_candelaria",
+      "PRMSU Masinloc": "applicants_masinloc",
+      "PRMSU Sta. Cruz": "applicants_stacruz"
+    }[campus];
+
+    if (campusTable) {
+      const { error: campusError } = await supa.from(campusTable).insert([applicantData]);
+      if (campusError) console.warn('Campus insert error:', campusError.message);
+    }
+
+    btnBusy(btn, false);
+    showNotice("✅ Sign-up successful! Please check your email to confirm your account.");
+  } catch (err) {
+    console.error('Sign-up error:', err);
+    showNotice(err.message || "An error occurred while signing up.");
+    btnBusy(btn, false);
+  }
+});
+
+// --- LOGIN ---
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.submitter;
+  btnBusy(btn, true);
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  try {
+    // Admin check
+    const { data: admin, error: adminErr } = await supa.from('admins').select('*').eq('email', email).single();
+    if (admin && !adminErr) {
+      if (admin.password === password) {
+        showNotice(`Welcome, ${admin.role}!`);
+        setTimeout(() => {
+          window.location.href = 'admin.html';
+        }, 1000);
+        btnBusy(btn, false);
+        return;
+      } else {
+        throw new Error("Invalid admin password.");
+      }
+    }
+
+    // Applicant login
+    const { error } = await supa.auth.signInWithPassword({ email, password });
+    btnBusy(btn, false);
+
+    if (error) {
+      const msg = (error.message || "").toLowerCase();
+      if (msg.includes("confirm")) return showNotice("Please confirm your email first.");
+      return showNotice("Invalid email or password.");
+    }
+
+    window.location.href = "student.html";
+  } catch (err) {
+    console.error(err);
+    showNotice(err.message || "Login failed.");
+    btnBusy(btn, false);
+  }
+});
+  </script>
+</body>
+</html>
