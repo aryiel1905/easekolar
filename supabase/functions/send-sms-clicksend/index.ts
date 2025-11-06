@@ -1,3 +1,5 @@
+/// <reference lib="deno.ns" />
+/// <reference lib="dom" />
 // supabase/functions/send-sms-clicksend/index.ts
 // Edge Function that sends SMS immediately via ClickSend and updates sms_outbox
 // POST JSON: { to: string, message: string, applicant_id?: number, email?: string, status?: string }
@@ -126,4 +128,3 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: cors });
   }
 });
-

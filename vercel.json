@@ -5,6 +5,6 @@
     }
   },
   "env": {
-    "CORS_ORIGIN": "https://https://easekolar.vercel.app/"
+    "CORS_ORIGIN": "https://easekolar.vercel.app"
   }
 }
