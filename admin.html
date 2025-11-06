@@ -719,10 +719,13 @@ async function loadDashboardStats() {
 
     if (error) throw error;
 
-    // Count totals by status
+    // Count totals by status (treat "Processing" as pending)
     const total = data.length;
-    const pending = data.filter(a => a.status === "Pending").length;
-    const approved = data.filter(a => a.status === "Approved").length;
+    const pending = data.filter(a => {
+      const s = (a.status || "").toLowerCase().trim();
+      return s === "pending" || s === "processing";
+    }).length;
+    const approved = data.filter(a => (a.status || "").toLowerCase().trim() === "approved").length;
     const rejected = data.filter(a => (a.status || "").toLowerCase().trim() === "rejected").length;
     const denied = rejected; // maintain legacy variable used in logging
 
@@ -1063,7 +1066,7 @@ async function fetchApplicants() {
     const normalizedStatus = (app.status || "").trim().toLowerCase();
     if (normalizedStatus === "approved") approvedCount++;
     else if (normalizedStatus === "rejected") rejectedCount++;
-    else if (normalizedStatus === "pending") pendingCount++;
+    else if (normalizedStatus === "pending" || normalizedStatus === "processing") pendingCount++;
   });
 
   // Clear table

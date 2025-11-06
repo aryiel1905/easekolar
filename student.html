@@ -931,7 +931,7 @@ async function fetchNotifications(studentEmail) {
   apps.forEach(row => {
     const status = row.status?.toLowerCase();
     if (status === "approved") approved++;
-    else if (status === "pending") pending++;
+    else if (status === "pending" || status === "processing") pending++;
     else if (status === "rejected") rejected++;
   });
 
