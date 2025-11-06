@@ -5,5 +5,5 @@
     }
   },
   "env": {},
-  "ignoreCommand": "if [ \"$VERCEL_ENV\" = \"production\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]; then echo 'skip prod: non-main'; exit 0; fi; exit 1"
+  "ignoreCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then if [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ] || [ \"$VERCEL_GIT_COMMIT_AUTHOR_LOGIN\" != \"aryiel1905\" ]; then echo 'skip prod: only main + author=aryiel1905'; exit 0; fi; fi; exit 1"
 }
