@@ -4,8 +4,6 @@
       "runtime": "nodejs20.x"
     }
   },
-  "env": {
-    "CORS_ORIGIN": "https://easekolar.vercel.app"
-  },
+  "env": {},
   "ignoreCommand": "if [ \"$VERCEL_GIT_COMMIT_AUTHOR_LOGIN\" != \"aryiel1905\" ]; then echo 'skip: author not aryiel1905'; exit 0; fi; if [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]; then echo 'skip: non-main branch'; exit 0; fi; exit 1"
 }
