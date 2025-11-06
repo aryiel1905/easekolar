@@ -37,7 +37,8 @@ function normalizePhonePH(p?: string | null): string | null {
 }
 
 async function sendViaClickSend(to: string, body: string) {
-  const authHeader = "Basic " + btoa(`${CLICKSEND_USERNAME}:${CLICKSEND_API_KEY}`);
+  const authHeader =
+    "Basic " + btoa(`${CLICKSEND_USERNAME}:${CLICKSEND_API_KEY}`);
   const payload = {
     messages: [
       {
@@ -69,22 +70,36 @@ async function sendViaClickSend(to: string, body: string) {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-  if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: cors });
+  if (req.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: cors });
+  if (req.method !== "POST")
+    return new Response(JSON.stringify({ error: "POST only" }), {
+      status: 405,
+      headers: cors,
+    });
 
   try {
     if (!CLICKSEND_USERNAME || !CLICKSEND_API_KEY) {
-      return new Response(JSON.stringify({ error: "ClickSend env not set" }), { status: 500, headers: cors });
+      return new Response(JSON.stringify({ error: "ClickSend env not set" }), {
+        status: 500,
+        headers: cors,
+      });
     }
 
     const { to, message, applicant_id, email, status } = await req.json();
     if (!to || !message) {
-      return new Response(JSON.stringify({ error: "to and message required" }), { status: 400, headers: cors });
+      return new Response(
+        JSON.stringify({ error: "to and message required" }),
+        { status: 400, headers: cors }
+      );
     }
 
     const toNorm = normalizePhonePH(to);
     if (!toNorm) {
-      return new Response(JSON.stringify({ error: "invalid destination number" }), { status: 400, headers: cors });
+      return new Response(
+        JSON.stringify({ error: "invalid destination number" }),
+        { status: 400, headers: cors }
+      );
     }
 
     const msgId = await sendViaClickSend(toNorm, message);
@@ -123,8 +138,14 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, message_id: msgId }), { status: 200, headers: cors });
+    return new Response(JSON.stringify({ ok: true, message_id: msgId }), {
+      status: 200,
+      headers: cors,
+    });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: cors });
+    return new Response(JSON.stringify({ error: String(e) }), {
+      status: 500,
+      headers: cors,
+    });
   }
 });
