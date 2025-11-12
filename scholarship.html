@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EaseKolar • Scholarships</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+  (function () {
+    const saved = localStorage.getItem('theme');
+    const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', saved || system);
+  })();
+</script>
+
+  <style>
+    /* ================== DARK THEME (current design) ================== */
+    :root{
+      --ink-900:#0b1430; --ink-800:#0e1c44; --ink-700:#102553; --ink-600:#173367;
+      --gold-500:#e0b01a; --gold-600:#c29300;
+      --text-strong:#ffffff; --text-soft:#d7def7; --text-muted:#a9b4d7;
+      --ring:0 0 0 3px rgba(224,176,26,.35);
+
+      --radius-xl:22px; --radius-lg:16px; --radius:12px;
+      --shadow-1:0 12px 40px rgba(5,10,25,.45);
+      --shadow-2:0 6px 24px rgba(5,10,25,.35);
+      --max:1200px;
+
+      /* glass & borders */
+      --nav-glass-from: rgba(9,16,40,.78);
+      --nav-glass-to:   rgba(9,16,40,.50);
+      --border-tint: rgba(255,255,255,.06);
+
+      /* background glow colors */
+      --rad1:#1d2b63; --rad2:#16255a;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      color:var(--text-strong);
+      background-color: var(--ink-900);
+      background-image:
+        radial-gradient(1200px 600px at 15% -10%, var(--rad1) 0%, rgba(0,0,0,0) 60%),
+        radial-gradient(800px 400px at 85% -5%, var(--rad2) 0%, rgba(0,0,0,0) 55%);
+      background-repeat:no-repeat,no-repeat;
+      background-attachment:fixed,fixed;
+      background-position:center top,center top;
+      overflow-x:hidden;
+    }
+    a{color:inherit;text-decoration:none}
+    img,svg{max-width:100%;display:block}
+
+    /* ===== Top Nav ===== */
+    .nav{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter:saturate(1.2) blur(10px);
+      background:linear-gradient(180deg, var(--nav-glass-from), var(--nav-glass-to));
+      border-bottom:1px solid var(--border-tint);
+    }
+    .nav-wrap{max-width:var(--max); margin:0 auto; padding:14px 20px; display:flex; align-items:center; gap:18px}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:900}
+    .brand .logo{
+      width:34px; height:34px; border-radius:9px; display:grid; place-items:center;
+      background:linear-gradient(135deg,#273879,#1b2a66); border:1px solid rgba(255,255,255,.06);
+      box-shadow: inset 0 2px 6px rgba(255,255,255,.06);
+    }
+    .brand span{letter-spacing:.1px}
+
+    .nav-menu{display:flex; gap:18px; margin-left:10px}
+    .nav-menu a{color:var(--text-soft); font-weight:700; padding:8px 10px; border-radius:10px}
+    .nav-menu a:hover{background:rgba(255,255,255,.06); color:#fff}
+
+    .spacer{flex:1}
+
+    .actions{display:flex; gap:10px}
+    .btn{display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.10); font-weight:800; cursor:pointer; transition:transform .08s ease}
+    .btn:hover{transform:translateY(-.5px)}
+    .btn:active{transform:translateY(0)}
+    .btn-ghost{background:transparent; color:#fff}
+    .btn-gold{background:var(--gold-500); color:#0b1600; border-color:transparent}
+    .btn-gold:hover{background:var(--gold-600)}
+
+    /* ===== Hero ===== */
+    .hero{position:relative}
+    .hero-wrap{max-width:var(--max); margin:0 auto; padding:72px 20px 20px; display:grid; grid-template-columns:1.1fr .9fr; gap:40px; align-items:center}
+    .hero h1{margin:0 0 10px; font-size:clamp(36px,4.2vw,56px); letter-spacing:.2px}
+    .hero p{margin:0 0 24px; color:var(--text-soft); font-size:clamp(16px,1.2vw,18px)}
+
+    .cta{display:flex; gap:12px; flex-wrap:wrap}
+    .cta .btn{padding:12px 18px}
+
+    .hat-illu{width:min(520px, 90%); margin-inline:auto; filter: drop-shadow(0 24px 60px rgba(0,0,0,.45));}
+
+    /* ===== Section: Scholarships ===== */
+    .section{max-width:var(--max); margin:48px auto; padding:0 20px}
+    .section h2{margin:0 0 10px; font-size:clamp(22px,2.6vw,30px)}
+    .section p.lead{margin:0 0 22px; color:var(--text-soft)}
+
+    .grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:20px; align-items:stretch}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:var(--radius-xl);
+      padding:22px; display:flex; flex-direction:column; gap:10px; height:100%; box-shadow:var(--shadow-2);
+      transition:transform .15s ease, border-color .15s ease, box-shadow .2s ease;
+    }
+    .card:hover{transform:translateY(-4px); border-color:rgba(224,176,26,.65); box-shadow:var(--shadow-1)}
+    .card h3{margin:0; font-size:18px}
+    .card p{margin:0; color:var(--text-soft)}
+    .card .apply-btn{margin-top:auto}
+
+    .apply-btn{width:100%; padding:12px 14px; border-radius:14px; border:1px solid transparent; background:var(--gold-500); color:#0b1600; font-weight:900; cursor:pointer}
+    .apply-btn:hover{background:var(--gold-600)}
+    .apply-btn:focus-visible{outline:none; box-shadow:var(--ring)}
+
+    /* ===== How it works ===== */
+    .how{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; margin-top:16px}
+    .how .step{padding:18px; border:1px solid rgba(255,255,255,.12); border-radius:16px; background:rgba(255,255,255,.04)}
+    .how .step h4{margin:0 0 6px}
+    .how .step p{margin:0; color:var(--text-soft)}
+
+    /* ===== Footer ===== */
+    footer{max-width:var(--max); margin:60px auto 40px; padding:0 20px; color:var(--text-muted); text-align:center}
+
+    /* === Embedded Application (used when opened from student.html) === */
+    .app-embed{ display:none; max-width:var(--max); margin:24px auto; padding:0 20px }
+    .app-embed .frame-wrap{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:18px; overflow:hidden; box-shadow:var(--shadow-1) }
+    .app-embed iframe{ width:100%; height:80vh; border:0; background:transparent }
+
+    /* ===== Modal ===== */
+    .modal{display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; align-items:center; justify-content:center; padding:20px}
+    .modal .panel{width:min(680px, 96vw); background:linear-gradient(180deg, #0f1d49, #0c183e); border:1px solid rgba(255,255,255,.14); color:#fff; border-radius:18px; box-shadow:var(--shadow-1); overflow:hidden}
+    .panel-header{display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid rgba(255,255,255,.08)}
+    .panel-header h3{margin:0; font-size:18px}
+    .panel-header .close{cursor:pointer; font-size:24px; color:var(--text-soft)}
+    .panel-body{padding:18px 20px}
+    .panel-body h4{margin:14px 0 6px; font-size:15px}
+    .confirm-btn{display:block; width:calc(100% - 40px); margin:8px 20px 20px; border-radius:14px; border:1px solid transparent; padding:12px 14px; font-weight:900; cursor:pointer; background:var(--gold-500); color:#0b1600}
+    .confirm-btn:hover{background:var(--gold-600)}
+
+    /* ===== Mobile Nav ===== */
+    .nav-toggle{display:none}
+    .nav-drawer{display:none}
+    @media (max-width:900px){
+      .nav-menu{display:none}
+      .nav-toggle{display:inline-flex; margin-left:auto; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.10); background:transparent; color:#fff; font-weight:800}
+      .nav-drawer{position:fixed; inset:62px 12px auto 12px; background:rgba(17,32,70,.95); border:1px solid rgba(255,255,255,.12); border-radius:14px; display:none; flex-direction:column; gap:8px; padding:10px; z-index:60}
+      .nav-drawer a{padding:10px 12px; border-radius:10px; color:var(--text-soft)}
+      .nav-drawer a:hover{background:rgba(255,255,255,.08); color:#fff}
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .btn:hover,.card:hover{transform:none}
+    }
+
+    /* ================== LIGHT THEME OVERRIDES ================== */
+    html[data-theme="light"]{
+      --text-strong:#0d223a; --text-soft:#4b5870; --text-muted:#6a7892;
+      --gold-500:#e0b01a; --gold-600:#c29300;
+      --nav-glass-from: rgba(255,255,255,.92);
+      --nav-glass-to:   rgba(255,255,255,.78);
+      --border-tint: rgba(24,34,58,.08);
+      --rad1:#f6f9ff; --rad2:#f1f6ff;
+    }
+    html[data-theme="light"] body{
+      color:var(--text-strong);
+      background-color:#edf2f9;
+      background-image:
+        radial-gradient(1200px 520px at -10% -10%, var(--rad1) 0%, rgba(0,0,0,0) 60%),
+        radial-gradient(900px 420px at 110% 0%, var(--rad2) 0%, rgba(0,0,0,0) 60%);
+    }
+    html[data-theme="light"] .btn-ghost{ color:#0d223a; border-color:rgba(24,34,58,.12); background:#ffffff; }
+    html[data-theme="light"] .nav-menu a:hover{background:rgba(13,34,64,.08); color:#0d223a}
+    html[data-theme="light"] .card{ background:linear-gradient(180deg, rgba(13,34,64,.03), rgba(13,34,64,.015)); border-color:rgba(24,34,58,.10); box-shadow:0 10px 24px rgba(13,30,54,.10); }
+    html[data-theme="light"] .how .step{ background:#ffffff; border-color:rgba(24,34,58,.10); }
+    html[data-theme="light"] footer{ color:#5a6a86 }
+    html[data-theme="light"] .modal{ background:rgba(0,0,0,.35) }
+    html[data-theme="light"] .modal .panel{ background:#ffffff; color:#1b2a46; border-color:rgba(24,34,58,.10); }
+    html[data-theme="light"] .panel-header{ border-color:rgba(24,34,58,.08) }
+    @media (max-width:900px){
+      html[data-theme="light"] .nav-toggle{ color:#0d223a; border-color:rgba(24,34,58,.12) }
+      html[data-theme="light"] .nav-drawer{ background:rgba(255,255,255,.98); border-color:rgba(24,34,58,.12); }
+      html[data-theme="light"] .nav-drawer a{ color:#2a3b59 }
+      html[data-theme="light"] .nav-drawer a:hover{ background:rgba(13,34,64,.08); color:#0d223a }
+    }
+
+    /* ============== Floating Theme Toggle (bottom-right) ============== */
+    .theme-fab{
+      position: fixed;
+      right: 18px;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      width: 56px; height: 56px;
+      border-radius: 999px;
+      display: inline-grid; place-items: center;
+      cursor: pointer; z-index: 1001;
+      backdrop-filter: saturate(1.2) blur(8px);
+      background: linear-gradient(180deg, var(--nav-glass-from), var(--nav-glass-to));
+      border: 1px solid var(--border-tint);
+      color: var(--text-strong);
+      box-shadow: 0 12px 28px rgba(0,0,0,.35);
+      transition: transform .12s ease, box-shadow .2s ease;
+      user-select: none;
+    }
+    .theme-fab:hover{ transform: translateY(-2px); box-shadow: 0 16px 36px rgba(0,0,0,.42); }
+    .theme-fab:focus-visible{ outline: none; box-shadow: 0 0 0 3px var(--ring), 0 12px 28px rgba(0,0,0,.35); }
+    @media print { .theme-fab{ display:none } }
+
+    /* ================== Search UI + highlight (added) ================== */
+    .search-row{display:flex; gap:10px; margin:12px 0 6px}
+    .search-field{
+      flex:1; padding:12px 14px; border-radius:12px; font:inherit;
+      border:1px solid var(--border-tint); background:rgba(255,255,255,.06); color:var(--text-strong);
+    }
+    .search-action{
+      padding:12px 14px; border-radius:12px; border:1px solid transparent;
+      background:var(--gold-500); color:#0b1600; font-weight:900; cursor:pointer;
+    }
+    .search-action:hover{ background:var(--gold-600) }
+    .result-meta{ color:var(--text-soft); margin:2px 0 16px }
+    .hidden{ display:none !important }
+    mark{ background: rgba(224,176,26,.35); padding:0 3px; border-radius:4px }
+    html[data-theme="light"] .search-field{ background:#ffffff; border-color:rgba(24,34,58,.12); color:#0d223a }
+
+.floating-apply {
+  position: fixed;
+  bottom: 20px;   /* distance from bottom */
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 9999;  /* keeps it on top of other content */
+}
+
+/* When embedded in student.html, keep CTA within content width and use sticky so it
+   stays within the section (not the whole screen) */
+html.embedded .floating-apply{
+  position: sticky;
+  bottom: 16px;
+  left: auto;
+  transform: none;
+  width: min(var(--max), 96vw);
+  margin: 0 auto;
+  z-index: 100;
+}
+
+.confirm-btn {
+  font-size: 1em;       /* makes text twice as large */
+  padding: 20px 40px;   /* adds more space inside button */
+  border-radius: 8px;   /* optional: round corners */
+}
+
+
+  </style>
+</head>
+<body>
+  <!-- ===== Navigation ===== -->
+  <header class="nav" role="navigation" aria-label="Main Navigation">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="26" height="26" fill="none">
+            <path d="M6 24L32 12l26 12-26 12L6 24Z" stroke="#e9f1ff" stroke-width="3"/>
+            <path d="M18 30v10s5 4 14 4 14-4 14-4V30" stroke="#e9f1ff" stroke-width="3"/>
+            <path d="M42 38l5 5 12-14" stroke="#e0b01a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span>Scholarship System</span>
+      </a>
+
+      <nav class="nav-menu" aria-label="Primary">
+        <a href="Index.html">Home</a>
+        <a href="track.html" id="track-pill">Track</a>
+      </nav>
+
+      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="drawer">Menu</button>
+      <div class="spacer" aria-hidden="true"></div>
+
+      <!-- removed inline theme button -->
+      <div class="actions" id="authActions">
+        <a class="btn btn-ghost" id="login-link" href="login-signup.html">Log in</a>
+        <a class="btn btn-gold" id="signup-link" href="sign-up.html">Sign up</a>
+        <a class="btn btn-ghost" id="logout-link" href="#" style="display:none">Log out</a>
+      </div>
+    </div>
+    <div class="nav-drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Mobile Menu">
+      <a href="#top" onclick="toggleDrawer(false)">Home</a>
+      <a href="#how" onclick="toggleDrawer(false)">How it works</a>
+      <a href="scholarship.html" onclick="toggleDrawer(false)">Scholarships</a>
+      <a href="track.html" id="track-drawer" onclick="toggleDrawer(false)">Track</a>
+    </div>
+  </header>
+
+  <!-- ===== Scholarships ===== -->
+  <section class="section" id="list" aria-labelledby="scholarship-heading">
+    <h2 id="scholarship-heading">Available Scholarships</h2>
+    <p class="lead">Choose from programs designed to support your education.</p>
+
+    <!-- Search bar + live results (added) -->
+    <div class="search-row" role="search" aria-label="Filter scholarships">
+      <input id="schSearchBox" class="search-field" type="search"
+             placeholder="Filter by name, benefits, eligibility…">
+      <button id="schSearchBtn" class="search-action">Filter</button>
+    </div>
+    <div id="resultMeta" class="result-meta" aria-live="polite"></div>
+
+    <div class="grid"></div>
+
+
+
+    </div>
+  </section>
+
+  <!-- Embedded Application (used when opened from student.html) -->
+  <section id="appEmbed" class="app-embed" aria-live="polite">
+    <div class="frame-wrap">
+      <iframe id="appFrame" title="Scholarship Application"></iframe>
+    </div>
+  </section>
+
+<section class="section floating-apply">
+  <button class="confirm-btn" onclick="confirmApply()">
+    <strong>Ready to Apply?</strong>
+  </button>
+</section>
+
+  <footer>
+    © 2025 Scholarship System · President Ramon Magsaysay State University
+  </footer>
+
+ <!-- ===== Modal ===== -->
+<div class="modal" id="scholarshipModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="panel">
+    <div class="panel-header">
+      <h3 id="modalTitle">Scholarship</h3>
+      <button class="close" aria-label="Close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="panel-body">
+      <h4>📖 Description</h4>
+      <p id="modalDescription"></p>
+      <h4>🎯 Grade Requirements</h4>
+      <p id="modalEligibility"></p>
+      <h4>💰 Required Documents</h4>
+      <p id="modalBenefits"></p>
+    </div>
+    <!-- Removed confirm button -->
+  </div>
+</div>
+
+
+  <!-- Floating Theme Toggle -->
+  <button class="theme-fab" id="themeToggle" aria-label="Switch to light mode" title="Toggle Light/Dark">☀️</button>
+
+<!-- Global Notice Modal -->
+<div id="noticeModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[3000]">
+  <div class="bg-white dark:bg-[#121b2d] rounded-2xl shadow-xl w-[90%] max-w-sm p-6 text-center">
+    <h2 id="noticeTitle" class="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100">Notice</h2>
+    <p id="noticeMsg" class="text-gray-700 dark:text-gray-300 mb-5"></p>
+    <button id="noticeClose" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-all">OK</button>
+  </div>
+</div>
+
+
+  <script>
+    // ===== Theme toggle =====
+    (function initTheme(){
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const initial = saved || (prefersDark ? 'dark' : 'light');
+      setTheme(initial);
+
+      function setToggleLabel(theme){
+        const btn = document.getElementById('themeToggle');
+        if(!btn) return;
+        if(theme === 'dark'){ btn.textContent = '☀️'; btn.setAttribute('aria-label','Switch to light mode'); }
+        else { btn.textContent = '🌙'; btn.setAttribute('aria-label','Switch to dark mode'); }
+      }
+      function setTheme(theme){
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        setToggleLabel(theme);
+      }
+      document.getElementById('themeToggle')?.addEventListener('click', () => {
+        const next = (document.documentElement.getAttribute('data-theme') === 'dark') ? 'light' : 'dark';
+        setTheme(next);
+      });
+      if(!saved && window.matchMedia){
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+          setTheme(e.matches ? 'dark' : 'light');
+        });
+      }
+    })();
+    
+
+    // ===== Mobile drawer
+    const navToggle = document.getElementById('navToggle');
+    const drawer = document.getElementById('drawer');
+    function toggleDrawer(force){
+      const open = typeof force === 'boolean' ? force : drawer.style.display !== 'flex';
+      drawer.style.display = open ? 'flex' : 'none';
+      navToggle?.setAttribute('aria-expanded', String(open));
+    }
+    navToggle?.addEventListener('click', () => toggleDrawer());
+    window.addEventListener('click', (e) => { if(e.target === drawer) toggleDrawer(false); });
+
+    // ===== Modal wiring
+    const modal = document.getElementById('scholarshipModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDescription = document.getElementById('modalDescription');
+    const modalEligibility = document.getElementById('modalEligibility');
+    const modalBenefits = document.getElementById('modalBenefits');
+   
+    function closeModal(){ modal.style.display = 'none'; }
+
+    function confirmApply(){
+      closeModal();
+      const isLoggedIn = localStorage.getItem('loggedIn');
+      const userRole = localStorage.getItem('role');
+      if (isLoggedIn === 'true' && userRole === 'applicant') {
+        window.location.href = 'application.html';
+      } else if (isLoggedIn === 'true' && userRole === 'admin') {
+        showNotice('Only applicants can apply for scholarships.');
+      } else {
+        showNotice('Please log in as an applicant before applying.');
+        window.location.href = 'login-signup.html';
+      }
+    }
+
+    // ===== Auth pill visibility
+    window.addEventListener('load', () => {
+      const loggedIn = localStorage.getItem('loggedIn') === 'true';
+      const loginLink = document.getElementById('login-link');
+      const signupLink = document.getElementById('signup-link');
+      const logoutLink = document.getElementById('logout-link');
+      const trackPill = document.getElementById('track-pill');
+      const trackDrawer = document.getElementById('track-drawer');
+
+      if (loggedIn) {
+        loginLink.style.display = 'none';
+        signupLink.style.display = 'none';
+        logoutLink.style.display = 'inline-flex';
+        trackPill?.style.setProperty('display','inline-flex');
+        trackDrawer?.style.setProperty('display','block');
+      } else {
+        loginLink.style.display = 'inline-flex';
+        signupLink.style.display = 'inline-flex';
+        logoutLink.style.display = 'none';
+        trackPill?.style.setProperty('display','none');
+        trackDrawer?.style.setProperty('display','none');
+      }
+    });
+
+    document.getElementById('logout-link')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.setItem('loggedIn','false');
+      localStorage.removeItem('role');
+      showNotice('You have logged out.');
+      window.location.href = 'Index.html';
+    });
+  </script>
+
+  <!-- ===== Search + Filter logic (reads ?q=, filters .card, highlights matches) ===== -->
+  <script>
+  (function(){
+    // elements
+    var input = document.getElementById('schSearchBox');
+    var btn   = document.getElementById('schSearchBtn');
+    var meta  = document.getElementById('resultMeta');
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.grid .card'));
+
+    function normalize(s){ return (s || '').toLowerCase(); }
+    function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    // Build a searchable string for each card: title + first paragraph + button data-*
+    function searchableText(card){
+      var titleEl = card.querySelector('h3');
+      var pEl     = card.querySelector('p');
+      var btnEl   = card.querySelector('.apply-btn');
+
+      var title = titleEl ? titleEl.textContent : '';
+      var para  = pEl ? pEl.textContent : '';
+      var data  = '';
+
+      if (btnEl && btnEl.dataset){
+        var ds = btnEl.dataset;
+        for (var k in ds){ if (Object.prototype.hasOwnProperty.call(ds,k)) data += ' ' + ds[k]; }
+      }
+      return normalize(title + ' ' + para + ' ' + data);
+    }
+
+    // Cache searchable strings
+    var hayCache = new Map();
+    cards.forEach(function(c){ hayCache.set(c, searchableText(c)); });
+
+    function clearHighlights(card){
+      var titleEl = card.querySelector('h3');
+      var pEl     = card.querySelector('p');
+      if (titleEl) titleEl.innerHTML = titleEl.textContent;
+      if (pEl)     pEl.innerHTML     = pEl.textContent;
+    }
+
+    function highlight(card, terms){
+      function apply(el){
+        if (!el) return;
+        var txt = el.textContent;
+        for (var i=0; i<terms.length; i++){
+          var t = terms[i]; if(!t) continue;
+          txt = txt.replace(new RegExp('(' + escReg(t) + ')','ig'), '<mark>$1</mark>');
+        }
+        el.innerHTML = txt;
+      }
+      apply(card.querySelector('h3'));
+      apply(card.querySelector('p'));
+    }
+
+    function filterCards(q){
+      var query = normalize(q).trim();
+      var terms = query ? query.split(/\s+/) : [];
+      var shown = 0;
+
+      for (var i=0; i<cards.length; i++){
+        var card = cards[i];
+        clearHighlights(card);
+
+        if (!query){
+          card.classList.remove('hidden'); shown++; continue;
+        }
+
+        var hay = hayCache.get(card) || '';
+        var match = true;
+        for (var j=0; j<terms.length; j++){
+          if (terms[j] && hay.indexOf(terms[j]) === -1){ match = false; break; }
+        }
+
+        if (match){
+          card.classList.remove('hidden');
+          highlight(card, terms);
+          shown++;
+        } else {
+          card.classList.add('hidden');
+        }
+      }
+
+      if (meta){
+        var total = cards.length;
+        if (!query) meta.textContent = 'Showing all ' + total + ' scholarships';
+        else if (shown === 0) meta.textContent = 'No scholarships match “' + q + '”.';
+        else meta.textContent = 'Showing ' + shown + ' of ' + total + ' for “' + q + '”';
+      }
+    }
+
+    function getParamQ(){
+      var params = new URLSearchParams(window.location.search);
+      return params.get('q') || '';
+    }
+    function setParamQ(q){
+      if (history && history.replaceState){
+        var url = new URL(window.location.href);
+        if (q) url.searchParams.set('q', q); else url.searchParams.delete('q');
+        history.replaceState(null, '', url);
+      }
+    }
+
+    // init from URL ?q=
+    var initialQ = getParamQ();
+    if (input) input.value = initialQ;
+    filterCards(initialQ);
+
+    // wire events
+    if (btn)   btn.addEventListener('click', function(){ filterCards(input ? input.value : ''); setParamQ(input ? input.value.trim() : ''); });
+    if (input){
+      input.addEventListener('keypress', function(e){ if (e.key === 'Enter'){ filterCards(input.value); setParamQ(input.value.trim()); } });
+      input.addEventListener('input',   function(){ setParamQ(input.value.trim()); });
+    }
+
+    // optional: scroll list into view when landing with ?q=
+    if (initialQ){
+      var list = document.getElementById('list');
+      if (list && list.scrollIntoView) list.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  })();
+  </script>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcm5xa29venNsb2VxenhwZ2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1ODQ5MjgsImV4cCI6MjA3NTE2MDkyOH0.E4Lp4LtyvRfFoImUkZMFyVBM7sro4aoNlQEa7sUIsIs";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function loadAdminScholarships(){
+  const { data, error } = await supabase
+    .from("scholarships")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error){
+    console.error("Error fetching scholarships:", error);
+    return;
+  }
+
+  const grid = document.querySelector(".grid");
+  if(!grid) return;
+
+  data.forEach(sch => {
+    const card = document.createElement("article");
+    card.className = "card";
+    card.setAttribute("tabindex", "0"); // make it keyboard-focusable
+
+    // Store details as data attributes
+    card.dataset.title = sch.name;
+    card.dataset.description =
+  (sch.description || "") +
+  (sch.amount
+    ? `\n\nThe student will receive a cash subsidy of ₱${sch.amount}, subject to prioritization and fund availability, to help cover education-related expenses such as enrolment fees, books, transportation, and living costs.`
+    : "");
+
+    card.dataset.eligibility = sch.grade ? "Applicants must meet the required General Weighted Average (GWA) of " + sch.grade + " " + " and grades no less than 90 per subject." : "";
+    card.dataset.benefits = sch.requirements || "";
+
+
+    card.innerHTML = `
+      <h3>${sch.name}</h3>
+      <p>${sch.amount ? "₱" + sch.amount : ""}</p>
+    `;
+    
+    if (document.documentElement.classList.contains('embedded')) {
+      const inlineBtn = document.createElement('button');
+      inlineBtn.className = 'apply-btn';
+      inlineBtn.type = 'button';
+      inlineBtn.textContent = 'Apply now';
+      inlineBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const list = document.getElementById('list');
+        const embed = document.getElementById('appEmbed');
+        const frame = document.getElementById('appFrame');
+        if (!embed || !frame || !list) return;
+        list.style.display = 'none';
+        embed.style.display = 'block';
+        frame.src = 'application.html';
+        const programName = card.dataset.title || sch.name;
+        const setProgram = () => {
+          try {
+            const doc = frame.contentDocument || frame.contentWindow.document;
+            if (!doc) return false;
+            const sel = doc.getElementById('scholarshipProgram');
+            if (!sel || !sel.options || sel.options.length === 0) return false;
+            for (let i = 0; i < sel.options.length; i++) {
+              if ((sel.options[i].textContent || '').trim() === (programName || '').trim()) {
+                sel.selectedIndex = i;
+                sel.dispatchEvent(new Event('change'));
+                return true;
+              }
+            }
+            return false;
+          } catch (_) { return false; }
+        };
+        frame.addEventListener('load', () => {
+          let tries = 0, max = 60; // ~7s
+          const loop = () => { if (setProgram() || ++tries >= max) return; setTimeout(loop, 120); };
+          loop();
+        }, { once: true });
+      });
+      card.appendChild(inlineBtn);
+    }
+
+    // clicking the card opens modal
+    card.addEventListener("click", () => {
+      const modal = document.getElementById("scholarshipModal");
+      document.getElementById("modalTitle").textContent = card.dataset.title;
+      document.getElementById("modalDescription").textContent = card.dataset.description;
+      document.getElementById("modalEligibility").textContent = card.dataset.eligibility;
+      document.getElementById("modalBenefits").textContent = card.dataset.benefits;
+      modal.style.display = "flex";
+    });
+
+    grid.appendChild(card);
+  });
+
+  // update search cache after new cards are added
+  const event = new Event("input");
+  document.getElementById("schSearchBox")?.dispatchEvent(event);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadAdminScholarships();
+});
+</script>
+
+<script>
+  // Detect if loaded inside student.html iframe
+  const isInStudent = window.location !== window.parent.location &&
+                      document.referrer.includes("student.html");
+  if (isInStudent) {
+    try { document.documentElement.classList.add('embedded'); } catch (_) {}
+  }
+
+  function closeModal(){ modal.style.display = 'none'; }
+
+  function confirmApply(){
+    closeModal();
+
+    // If inside student.html → skip login restrictions
+    if (isInStudent) {
+      window.location.href = "application.html";
+      return;
+    }
+
+    // Normal login restriction
+    const isLoggedIn = localStorage.getItem('loggedIn');
+    const userRole = localStorage.getItem('role');
+    if (isLoggedIn === 'true' && userRole === 'applicant') {
+      window.location.href = 'application.html';
+    } else if (isLoggedIn === 'true' && userRole === 'admin') {
+      showNotice('Only applicants can apply for scholarships.');
+    } else {
+      showNotice('Please log in as an applicant before applying.');
+      window.location.href = 'login-signup.html';
+    }
+  }
+
+  // ===== Auth pill + navbar visibility
+  window.addEventListener('load', () => {
+    const loginLink = document.getElementById('login-link');
+    const signupLink = document.getElementById('signup-link');
+    const logoutLink = document.getElementById('logout-link');
+    const trackPill = document.getElementById('track-pill');
+    const trackDrawer = document.getElementById('track-drawer');
+    const nav = document.querySelector('.nav');
+    const themeFab = document.getElementById('themeToggle');
+
+    if (isInStudent) {
+      // Hide nav & theme toggle; hide floating CTA in embedded view
+      if (nav) nav.style.display = 'none';
+      if (themeFab) themeFab.style.display = 'none';
+      const cta = document.querySelector('.floating-apply');
+      if (cta) cta.style.display = 'none';
+      return;
+    }
+
+    // Normal behavior if standalone
+    const loggedIn = localStorage.getItem('loggedIn') === 'true';
+    if (loggedIn) {
+      loginLink.style.display = 'none';
+      signupLink.style.display = 'none';
+      logoutLink.style.display = 'inline-flex';
+      trackPill?.style.setProperty('display','inline-flex');
+      trackDrawer?.style.setProperty('display','block');
+    } else {
+      loginLink.style.display = 'inline-flex';
+      signupLink.style.display = 'inline-flex';
+      logoutLink.style.display = 'none';
+      trackPill?.style.setProperty('display','none');
+      trackDrawer?.style.setProperty('display','none');
+    }
+  });
+
+  // === Global Notice Modal ===
+const noticeModal = document.getElementById("noticeModal");
+const noticeTitle = document.getElementById("noticeTitle");
+const noticeMsg = document.getElementById("noticeMsg");
+const noticeClose = document.getElementById("noticeClose");
+
+function showNotice(message, title = "Notice") {
+  noticeTitle.textContent = title;
+  noticeMsg.textContent = message;
+  noticeModal.classList.remove("hidden");
+  noticeModal.classList.add("flex");
+  document.body.style.overflow = "hidden"; // prevent background scroll
+}
+
+function hideNotice() {
+  noticeModal.classList.add("hidden");
+  noticeModal.classList.remove("flex");
+  document.body.style.overflow = "";
+}
+
+noticeClose.addEventListener("click", hideNotice);
+noticeModal.addEventListener("click", (e) => {
+  if (e.target === noticeModal) hideNotice();
+});
+
+</script>
+ 
+</body>
+</html>

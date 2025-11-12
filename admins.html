@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Management</title>
+  <style>
+    :root{
+      --bg: #eef3fb; --panel: #ffffff; --muted: #eaf1ff; --border: #e6eaf2; --text: #0f172a;
+      --sidebar: #fbfdff; --sidebar-border: #e6eaf2; --sidebar-hover: #f0f4ff; --sidebar-active: #e7efff;
+      --content-grad1: #fbfdff; --content-grad2: #f1f5fe;
+    }
+    *{ box-sizing:border-box; }
+    html, body { height: 100%; }
+    body{ background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; display:flex; align-items:center; justify-content:center; padding:16px; margin:0; }
+    .container{ display:flex; width:96%; height:92vh; background:var(--panel); border:1px solid var(--border); border-radius:24px; box-shadow:0 10px 30px rgba(15,23,42,.05); overflow:hidden; }
+    .sidebar{ width:280px; background:var(--sidebar); border-right:1px solid var(--sidebar-border); padding:24px 20px; display:flex; flex-direction:column; gap:16px; }
+    .brand{ font-weight:800; font-size:1.1rem; margin-bottom:6px; color:var(--text); }
+    .menu{ display:flex; flex-direction:column; gap:6px; }
+    .menu a{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--text); text-decoration:none; transition:.2s; }
+    .menu a:hover{ background:var(--sidebar-hover); }
+    .menu a.active{ background:var(--sidebar-active); border:1px solid var(--border); }
+    .sidebar-bottom{ margin-top:auto; }
+    #logout-btn{ background: var(--text); color: var(--panel); padding: 10px 12px; border-radius: 12px; font-weight: 700; border:none; cursor:pointer; width:100%; }
+    .profile-card{ background: var(--sidebar-active); border:1px solid var(--sidebar-border); border-radius:16px; padding:12px; }
+    .profile-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .avatar{ width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background: var(--sidebar-hover); }
+    .profile-name{ font-weight:800; }
+    .profile-role{ font-size:12px; color:#6b7280; }
+    .content{ flex:1; background: linear-gradient(180deg,var(--content-grad1),var(--content-grad2)); padding:28px 32px 32px; overflow:auto; }
+    .content > *{ max-width:1120px; margin-left:auto; margin-right:auto; }
+    .card{ background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:18px; box-shadow:0 6px 16px rgba(15,23,42,.04); max-width:720px; }
+    label{ font-size:13px; font-weight:600; display:block; margin:8px 0 6px; }
+    input, select{ width:100%; padding:12px; border:1px solid var(--border); border-radius:12px; font-size:14px; }
+    .btn{ border:none; cursor:pointer; border-radius:12px; padding:12px 14px; font-weight:800; }
+    .btn-primary{ background:#e0b01a; color:#0b1600; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; }
+    .span-2{ grid-column: span 2; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-root"></div>
+    <main class="content">
+      <h1 style="margin:0 0 12px; font-size:24px; font-weight:800;">Admin Management</h1>
+      <div class="card">
+        <form id="adminForm" autocomplete="off">
+          <div class="grid">
+            <div class="span-2">
+              <label for="adminName">Full Name</label>
+              <input type="text" id="adminName" required />
+            </div>
+            <div class="span-2">
+              <label for="adminEmail">Email</label>
+              <input type="email" id="adminEmail" required />
+            </div>
+            <div class="span-2">
+              <label for="adminPassword">Password</label>
+              <input type="password" id="adminPassword" autocomplete="new-password" required />
+            </div>
+            <div class="span-2">
+              <label for="adminPhone">Phone Number</label>
+              <input type="text" id="adminPhone" required />
+            </div>
+            <div class="span-2">
+              <label for="adminCampus">Campus</label>
+              <select id="adminCampus" required>
+                <option value="">Select Campus</option>
+                <option value="Sta Cruz">Sta Cruz</option>
+                <option value="Candelaria">Candelaria</option>
+                <option value="Masinloc">Masinloc</option>
+                <option value="Iba">Iba</option>
+                <option value="Caste">Caste</option>
+                <option value="San Marcelino">San Marcelino</option>
+              </select>
+            </div>
+            <div class="span-2">
+              <label for="adminRole">Role</label>
+              <select id="adminRole" required>
+                <option value="">Select Role</option>
+                <option value="main_admin">Main Admin</option>
+                <option value="program_admin">Program Admin</option>
+              </select>
+            </div>
+            <div class="span-2" style="margin-top:6px;">
+              <button type="submit" class="btn btn-primary">Add Admin</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="shared/sidebar.js" defer></script>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcm5xa29venNsb2VxenhwZ2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1ODQ5MjgsImV4cCI6MjA3NTE2MDkyOH0.E4Lp4LtyvRfFoImUkZMFyVBM7sro4aoNlQEa7sUIsIs";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const ADMIN_CAMPUS = (localStorage.getItem('adminCampus')||'').trim();
+    if (!ADMIN_CAMPUS) window.location.href = 'login-signup.html';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.loadAdminSidebar) window.loadAdminSidebar('admin');
+    });
+
+    const adminForm = document.getElementById('adminForm');
+    adminForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const adminData = {
+        full_name: document.getElementById('adminName').value.trim(),
+        email: document.getElementById('adminEmail').value.trim(),
+        password: document.getElementById('adminPassword').value.trim(),
+        phone_number: document.getElementById('adminPhone').value.trim(),
+        campus: document.getElementById('adminCampus').value,
+        role: document.getElementById('adminRole').value,
+      };
+      const { error } = await supabase.from('admins').insert([adminData]);
+      if (error) {
+        console.error('Error adding admin:', error);
+        alert('Failed to add admin.');
+      } else {
+        alert('Admin added successfully.');
+        adminForm.reset();
+      }
+    });
+  </script>
+</body>
+</html>

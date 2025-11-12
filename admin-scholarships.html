@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scholarship Management - Admin</title>
+  <style>
+    :root{
+      --bg: #eef3fb; --panel: #ffffff; --muted: #eaf1ff; --border: #e6eaf2; --text: #0f172a;
+      --sidebar: #fbfdff; --sidebar-border: #e6eaf2; --sidebar-hover: #f0f4ff; --sidebar-active: #e7efff;
+      --content-grad1: #fbfdff; --content-grad2: #f1f5fe;
+    }
+    *{ box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{ background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; display:flex; align-items:center; justify-content:center; padding:16px; margin:0; }
+    .container{ display:flex; width:96%; height:92vh; background:var(--panel); border:1px solid var(--border); border-radius:24px; box-shadow:0 10px 30px rgba(15,23,42,.05); overflow:hidden; }
+    .sidebar{ width:280px; background:var(--sidebar); border-right:1px solid var(--sidebar-border); padding:24px 20px; display:flex; flex-direction:column; gap:16px; }
+    .brand{ font-weight:800; font-size:1.1rem; margin-bottom:6px; color:var(--text); }
+    .menu{ display:flex; flex-direction:column; gap:6px; }
+    .menu a{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--text); text-decoration:none; transition:.2s; }
+    .menu a:hover{ background:var(--sidebar-hover); }
+    .menu a.active{ background:var(--sidebar-active); border:1px solid var(--border); }
+    .sidebar-bottom{ margin-top:auto; }
+    #logout-btn{ background: var(--text); color: var(--panel); padding: 10px 12px; border-radius: 12px; font-weight: 700; border:none; cursor:pointer; width:100%; }
+    .profile-card{ background: var(--sidebar-active); border:1px solid var(--sidebar-border); border-radius:16px; padding:12px; }
+    .profile-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .avatar{ width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background: var(--sidebar-hover); }
+    .profile-name{ font-weight:800; }
+    .profile-role{ font-size:12px; color:#6b7280; }
+    .content{ flex:1; background: linear-gradient(180deg,var(--content-grad1),var(--content-grad2)); padding:28px 32px 32px; overflow:auto; }
+    /* Uniform main content width across tabs */
+    .content > *{ max-width: 1120px; margin-left:auto; margin-right:auto; }
+    .card{ background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:18px; box-shadow:0 6px 16px rgba(15,23,42,.04); }
+    .hstack{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+    .btn{ border:none; cursor:pointer; border-radius:12px; padding:10px 14px; font-weight:700; }
+    .btn-primary{ background:#1d4ed8; color:#fff; }
+    .btn-secondary{ background:#eaeef8; }
+    label{ font-size:13px; font-weight:600; display:block; margin:8px 0 6px; }
+    input, textarea{ width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px; font-size:14px; }
+    textarea{ resize:vertical; min-height:80px; }
+    .requirements-list{ display:flex; flex-wrap:wrap; gap:8px; padding:0; margin:8px 0 0; list-style:none; }
+    .requirements-list li{ background:#eef2ff; border:1px solid #e1e8ff; padding:6px 10px; border-radius:10px; font-size:12px; }
+    .sch-card{ border:1px solid var(--border); border-radius:16px; padding:16px; background:#fff; }
+    .sch-card h4{ margin:0 0 6px; font-size:16px; font-weight:700; }
+    .muted{ color:#475569; font-size:13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-root"></div>
+    <main class="content">
+      <div class="hstack" style="margin-bottom:10px;">
+        <h1 style="margin:0; font-size:24px; font-weight:800;">Scholarship Management</h1>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="margin:0 0 8px;">Add Scholarship</h3>
+        <form id="scholarshipForm">
+          <label for="schName">Scholarship Name</label>
+          <input type="text" id="schName" required />
+
+          <label for="schGrade">Grade Requirements</label>
+          <input type="text" id="schGrade" required />
+
+          <label for="schAmount">Amount</label>
+          <input type="text" id="schAmount" required />
+
+          <label for="schRequirement">Required Documents (press Enter to add)</label>
+          <input type="text" id="schRequirement" placeholder="e.g., Report Card" />
+          <ul id="requirementsPreview" class="requirements-list"></ul>
+
+          <label for="schDesc">Description</label>
+          <textarea id="schDesc" required></textarea>
+
+          <div style="margin-top:12px;">
+            <button type="submit" class="btn btn-primary">Save Scholarship</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 12px;">Scholarships</h3>
+        <div id="scholarshipList" class="grid"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="shared/sidebar.js" defer></script>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcm5xa29venNsb2VxenhwZ2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1ODQ5MjgsImV4cCI6MjA3NTE2MDkyOH0.E4Lp4LtyvRfFoImUkZMFyVBM7sro4aoNlQEa7sUIsIs";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const ADMIN_CAMPUS = (localStorage.getItem("adminCampus") || "").trim();
+    if (!ADMIN_CAMPUS) window.location.href = "login-signup.html";
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.loadAdminSidebar) window.loadAdminSidebar('scholarships');
+    });
+
+    const scholarshipForm = document.getElementById('scholarshipForm');
+    const requirementInput = document.getElementById('schRequirement');
+    const requirementsPreview = document.getElementById('requirementsPreview');
+    let requirements = [];
+
+    requirementInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const value = (requirementInput.value || '').trim();
+        if (!value) return;
+        requirements.push(value);
+        renderRequirements();
+        requirementInput.value = '';
+      }
+    });
+
+    function renderRequirements(){
+      requirementsPreview.innerHTML = '';
+      requirements.forEach((req, idx) => {
+        const li = document.createElement('li');
+        li.textContent = req;
+        li.title = 'Click to remove';
+        li.style.cursor = 'pointer';
+        li.addEventListener('click', () => {
+          requirements.splice(idx, 1);
+          renderRequirements();
+        });
+        requirementsPreview.appendChild(li);
+      });
+    }
+
+    scholarshipForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        name: document.getElementById('schName').value,
+        grade: document.getElementById('schGrade').value,
+        requirements: requirements,
+        amount: document.getElementById('schAmount').value,
+        description: document.getElementById('schDesc').value
+      };
+      const { error } = await supabase.from('scholarships').insert([data]);
+      if (error) {
+        console.error('Error saving scholarship:', error);
+        alert('Failed to save scholarship.');
+      } else {
+        alert('Scholarship saved.');
+        scholarshipForm.reset();
+        requirements = [];
+        renderRequirements();
+        fetchScholarships();
+      }
+    });
+
+    async function fetchScholarships(){
+      const list = document.getElementById('scholarshipList');
+      list.innerHTML = '<p class="muted">Loading...</p>';
+      const { data, error } = await supabase
+        .from('scholarships')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Fetch error:', error);
+        list.innerHTML = '<p class="muted">Failed to load scholarships.</p>';
+        return;
+      }
+      list.innerHTML = '';
+      (data||[]).forEach(sch => {
+        const card = document.createElement('div');
+        card.className = 'sch-card';
+        card.innerHTML = `
+          <h4>${sch.name}</h4>
+          <div class="muted" style="margin-bottom:6px;">${sch.description || ''}</div>
+          <div class="muted"><strong>Grade:</strong> ${sch.grade || ''}</div>
+          <div class="muted"><strong>Amount:</strong> ${sch.amount || ''}</div>
+          <div class="muted"><strong>Required Docs:</strong> ${(sch.requirements||[]).join(', ')}</div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    fetchScholarships();
+  </script>
+</body>
+</html>

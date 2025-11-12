@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Application History - EaseKolar</title>
+
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- html2canvas & jsPDF (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+      :root {
+        /* Match admin.html light theme */
+        --bg: #eef3fb;
+        --panel: #ffffff;
+        --muted: #475569;
+        --border: #e6eaf2;
+        --text: #0f172a;
+        --sidebar: #fbfdff;
+        --sidebar-border: #e6eaf2;
+        --sidebar-hover: #f0f4ff;
+        --sidebar-active: #e7efff;
+        --content-grad1: #fbfdff;
+        --content-grad2: #f1f5fe;
+
+        /* History card palette (kept slightly darker for contrast) */
+        --card: #ffffff;
+        --row-odd: #f9fbff;
+        --row-hover: #f3f6fe;
+        --table-head: #f3f6fe;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Poppins", ui-sans-serif, system-ui, -apple-system,
+          Segoe UI, Roboto, "Helvetica Neue", Arial;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        margin: 0;
+      }
+      .container {
+        display: flex;
+        width: 96%;
+        height: 92vh;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        box-shadow: 0 2px 5px rgba(15, 23, 42, 0.25);
+        overflow: hidden;
+      }
+      .sidebar {
+        width: 280px;
+        background: var(--sidebar);
+        border-right: 1px solid var(--sidebar-border);
+        padding: 24px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .brand {
+        font-weight: 800;
+        font-size: 1.1rem;
+        margin-bottom: 6px;
+        color: var(--text);
+      }
+      .menu {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1 1 auto;
+      }
+      .menu a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        color: var(--text);
+        text-decoration: none;
+        transition: 0.2s;
+      }
+      .menu a:hover {
+        background: var(--sidebar-hover);
+      }
+      .menu a.active {
+        background: var(--sidebar-active);
+        border: 1px solid var(--border);
+      }
+      .sidebar-bottom {
+        margin-top: auto;
+      }
+      #logout-btn {
+        background: var(--text);
+        color: var(--panel);
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+      }
+      .profile-card {
+        background: var(--sidebar-active);
+        border: 1px solid var(--sidebar-border);
+        border-radius: 16px;
+        padding: 12px;
+      }
+      .profile-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--sidebar-hover);
+      }
+      .profile-name {
+        font-weight: 800;
+      }
+      .profile-role {
+        font-size: 12px;
+        color: #6b7280;
+      }
+      .content {
+        flex: 1;
+        background: linear-gradient(
+          180deg,
+          var(--content-grad1),
+          var(--content-grad2)
+        );
+        padding: 28px 32px 32px;
+        overflow: auto;
+      }
+      /* Uniform main content width across tabs */
+      .content > * {
+        max-width: 1120px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      /* History card */
+      .card {
+        position: relative;
+        background-color: var(--card);
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+        padding: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+
+      p {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+
+      /* Buttons row */
+      .top-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        position: absolute;
+        top: 24px;
+        right: 24px;
+      }
+
+      .filter-row {
+        margin-bottom: 15px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .filter-btn,
+      .action-btn {
+        padding: 8px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        border: none;
+        font-weight: 600;
+        background: #475569;
+        color: white;
+      }
+
+      .approved-btn {
+        background: #16a34a;
+        color: white;
+      }
+      .rejected-btn {
+        background: #dc2626;
+        color: white;
+      }
+      .csv-btn {
+        background: #0ea5e9;
+      }
+      .pdf-btn {
+        background: #3b82f6;
+      }
+
+      /* Table: fixed layout to avoid merged columns */
+      .table-wrap {
+        overflow: auto;
+        border-radius: 12px;
+        background: transparent;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        color: var(--text);
+        table-layout: fixed; /* key to avoid column collapse */
+        min-width: 1000px; /* allow horizontal scroll on small screens */
+      }
+
+      th,
+      td {
+        padding: 12px 10px;
+        text-align: left; /* left align content for readability */
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+        word-wrap: break-word;
+        overflow-wrap: break-word; /* avoid chopping words mid-letter */
+      }
+
+      th {
+        background-color: var(--table-head);
+        color: #64748b; /* readable header text */
+        font-weight: 700;
+      }
+
+      /* Right-align the rightmost Status column */
+      .status-col {
+        text-align: right;
+      }
+
+      /* sensible column widths — adjust as needed */
+      colgroup col:nth-child(1) {
+        width: 40px;
+      } /* # */
+      colgroup col:nth-child(2) {
+        width: 200px;
+      } /* Name */
+      colgroup col:nth-child(3) {
+        width: 220px;
+      } /* Program */
+      colgroup col:nth-child(4) {
+        width: 140px;
+      } /* Campus */
+      colgroup col:nth-child(5) {
+        width: 300px;
+      } /* Address */
+      colgroup col:nth-child(6) {
+        width: 120px;
+      } /* Status */
+      colgroup col:nth-child(7) {
+        width: 160px;
+      } /* Decided At */
+      colgroup col:nth-child(8) {
+        width: 160px;
+      } /* Decided By */
+
+      tr:nth-child(even) {
+        background-color: var(--row-odd);
+      }
+
+      tr:hover {
+        background-color: var(--row-hover);
+        transition: 0.2s;
+      }
+
+      .status {
+        font-weight: 700;
+        border-radius: 8px;
+        padding: 6px 12px;
+        display: inline-block;
+        text-align: center;
+        min-width: 90px;
+        white-space: nowrap; /* keep on one line */
+        word-break: normal; /* override td overflow-wrap */
+        overflow-wrap: normal; /* prevent breaking words */
+      }
+
+      .status.approved {
+        background-color: #16a34a;
+        color: white;
+      }
+      .status.rejected {
+        background-color: #dc2626;
+        color: white;
+      }
+
+      /* Preview overlay (fullscreen) */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 12, 25, 0.75);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+
+      .overlay.open {
+        display: flex;
+      }
+
+      .preview-modal {
+        width: 95%;
+        height: 95%;
+        background: #fff;
+        border-radius: 10px;
+        overflow: auto;
+        padding: 18px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .preview-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e6e6e6;
+      }
+
+      .preview-image-wrap {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: auto;
+        background: #f3f3f3;
+        padding: 8px;
+      }
+
+      .preview-image-wrap img {
+        max-width: 100%;
+        max-height: 100%;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      }
+      /* PDF PRINT AREA CONTAINER */
+      #pdfPrintArea {
+        width: 1200px;
+        background: white;
+        color: #000;
+        padding: 26px;
+        box-sizing: border-box;
+        border-radius: 4px;
+        font-family: "Poppins", sans-serif;
+        line-height: 1.2;
+        overflow: hidden; /* prevents cropping on right side */
+      }
+
+      /* FIT TABLE PROPERLY */
+      #pdfPrintArea table {
+        width: 100% !important;
+        border-collapse: collapse;
+        table-layout: fixed !important; /* prevents pushing width */
+      }
+
+      /* FORCE PURE BLACK & WHITE */
+      #pdfPrintArea table,
+      #pdfPrintArea th,
+      #pdfPrintArea td,
+      #pdfPrintArea tr {
+        background: #ffffff !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+      }
+
+      /* REMOVE ALTERNATING COLORS */
+      #pdfPrintArea tr:nth-child(even),
+      #pdfPrintArea tr:nth-child(odd) {
+        background: #ffffff !important;
+      }
+
+      /* BORDER & TEXT WRAP */
+      #pdfPrintArea th,
+      #pdfPrintArea td {
+        border: 1px solid #000 !important;
+        word-wrap: break-word !important;
+        white-space: normal !important;
+        font-size: 10px;
+        padding: 6px 5px;
+        text-align: left;
+      }
+
+      /* HEADER BOLD */
+      #pdfPrintArea th {
+        font-weight: 700;
+        text-align: center;
+      }
+
+      /* ------- COLUMN WIDTH CONTROL ------- */
+
+      /* # column */
+      #pdfPrintArea th:nth-child(1),
+      #pdfPrintArea td:nth-child(1) {
+        width: 35px !important;
+      }
+
+      /* Name */
+      #pdfPrintArea th:nth-child(2),
+      #pdfPrintArea td:nth-child(2) {
+        width: 150px !important;
+      }
+
+      /* Scholarship Program */
+      #pdfPrintArea th:nth-child(3),
+      #pdfPrintArea td:nth-child(3) {
+        width: 150px !important;
+      }
+
+      /* Campus */
+      #pdfPrintArea th:nth-child(4),
+      #pdfPrintArea td:nth-child(4) {
+        width: 80px !important;
+      }
+
+      /* Address */
+      #pdfPrintArea th:nth-child(5),
+      #pdfPrintArea td:nth-child(5) {
+        width: 180px !important;
+      }
+
+      /* Status */
+      #pdfPrintArea th:nth-child(6),
+      #pdfPrintArea td:nth-child(6) {
+        width: 80px !important;
+      }
+
+      /* Date */
+      #pdfPrintArea th:nth-child(7),
+      #pdfPrintArea td:nth-child(7) {
+        width: 110px !important;
+      }
+
+      /* Decided By */
+      #pdfPrintArea th:nth-child(8),
+      #pdfPrintArea td:nth-child(8) {
+        width: 140px !important;
+      }
+
+      #pdfHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      #pdfHeader .title {
+        text-align: left;
+      }
+
+      #pdfHeader h2 {
+        margin: 0;
+        font-size: 20px;
+      }
+      #pdfHeader p {
+        margin: 0;
+        color: #333;
+        font-size: 12px;
+      }
+
+      #pdfTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-top: 12px;
+      }
+
+      #pdfTable th,
+      #pdfTable td {
+        padding: 8px 6px;
+        border: 1px solid #ddd;
+        text-align: left;
+        vertical-align: middle;
+        font-size: 11px;
+        word-break: break-word;
+      }
+
+      #pdfFooter {
+        margin-top: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* logo preview */
+      #logoPreview {
+        width: 120px;
+        height: 60px;
+        object-fit: contain;
+      }
+
+      /* small responsive tweaks */
+      @media (max-width: 900px) {
+        #pdfPrintArea {
+          width: 900px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Sidebar -->
+      <!-- Sidebar (shared) -->
+      <div id="sidebar-root"></div>
+
+      <!-- Main area -->
+      <main class="content">
+        <div class="card">
+          <h1>Application History</h1>
+          <p>
+            Displays past scholarship decisions with review results and update
+            dates.
+          </p>
+
+          <!-- Top controls (Export buttons & logo upload) -->
+          <div class="top-controls">
+            <label style="display: flex; gap: 8px; align-items: center">
+              <input
+                id="logoInput"
+                type="file"
+                accept="image/*"
+                style="display: none"
+              />
+              <button
+                id="uploadLogoBtn"
+                class="filter-btn"
+                title="Upload logo (optional)"
+              >
+                Upload Logo
+              </button>
+            </label>
+
+            <button id="exportPdfBtn" class="action-btn pdf-btn">
+              Export PDF
+            </button>
+          </div>
+
+          <!-- Filter Buttons -->
+          <div class="filter-row">
+            <button onclick="setFilter('All')" class="filter-btn">All</button>
+            <button
+              onclick="setFilter('Approved')"
+              class="filter-btn approved-btn"
+            >
+              Approved
+            </button>
+            <button
+              onclick="setFilter('Rejected')"
+              class="filter-btn rejected-btn"
+            >
+              Rejected
+            </button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <colgroup>
+                <col />
+                <col />
+                <col />
+                <col />
+                <col />
+                <col />
+                <col />
+                <col />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Program</th>
+                  <th>Campus</th>
+                  <th>Address</th>
+                  <th>Status</th>
+                  <th>Decided At</th>
+                  <th>Decided By</th>
+                </tr>
+              </thead>
+              <tbody id="historyTable"></tbody>
+            </table>
+          </div>
+
+          <div style="display: flex; justify-content: center; margin-top: 14px">
+            <button id="loadMoreBtn" class="action-btn" style="display: none">
+              Load more
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Fullscreen Preview Overlay -->
+    <div id="overlay" class="overlay" role="dialog" aria-hidden="true">
+      <div class="preview-modal" role="document">
+        <div class="preview-toolbar">
+          <div>
+            <strong>PDF Preview</strong>
+            <div
+              id="previewMeta"
+              style="font-size: 12px; color: #666; margin-top: 4px"
+            ></div>
+          </div>
+          <div style="display: flex; gap: 8px">
+            <button id="downloadPdfBtn" class="action-btn pdf-btn">
+              Download PDF
+            </button>
+            <button id="closePreviewBtn" class="action-btn">Close</button>
+          </div>
+        </div>
+
+        <div class="preview-image-wrap">
+          <img id="previewImage" src="" alt="Report preview" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden print area (rendered to image for preview and used for PDF generation) -->
+    <div id="pdfPrintArea" style="display: none">
+      <div id="pdfHeader">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <div
+            id="logoHolder"
+            style="
+              width: 120px;
+              height: 60px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+          >
+            <!-- logo img inserted here -->
+          </div>
+          <div class="title">
+            <h2>EaseKolar Report</h2>
+            <p id="reportDate">Generated:</p>
+          </div>
+        </div>
+        <div style="text-align: right">
+          <p style="font-size: 12px; color: #333; margin: 0">EaseKolar</p>
+          <p style="font-size: 12px; color: #333; margin: 0">Summary Report</p>
+        </div>
+      </div>
+
+      <table id="pdfTable">
+        <thead>
+          <tr>
+            <th style="width: 30px">#</th>
+            <th style="width: 200px">Name</th>
+            <th style="width: 200px">Program</th>
+            <th style="width: 120px">Campus</th>
+            <th style="width: 300px">Address</th>
+            <th style="width: 120px">Status</th>
+            <th style="width: 160px">Decided At</th>
+            <th style="width: 160px">Decided By</th>
+          </tr>
+        </thead>
+        <tbody id="pdfTableBody"></tbody>
+      </table>
+
+      <div id="pdfFooter">
+        <div>
+          <p style="margin: 0; font-size: 12px">
+            Prepared by: ____________________
+          </p>
+          <p style="margin: 0; font-size: 12px">Date: ____________________</p>
+        </div>
+        <div style="text-align: right">
+          <p style="margin: 0; font-size: 12px">EaseKolar</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="shared/sidebar.js" defer></script>
+    <script type="module">
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+      const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
+      const SUPABASE_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcm5xa29venNsb2VxenhwZ2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1ODQ5MjgsImV4cCI6MjA3NTE2MDkyOH0.E4Lp4LtyvRfFoImUkZMFyVBM7sro4aoNlQEa7sUIsIs";
+      const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+      const ADMIN_CAMPUS = (localStorage.getItem("adminCampus") || "").trim();
+      const ADMIN_NAME = (localStorage.getItem("adminName") || "").trim();
+      if (!ADMIN_CAMPUS) {
+        window.location.href = "login-signup.html";
+      }
+
+      let historyData = [];
+      let activeFilter = "All";
+      let uploadedLogoDataUrl = null; // holds logo data URL if uploaded
+      const PAGE_SIZE = 20;
+      let page = 0;
+      let hasMore = true;
+
+      // --- Fetch history from Supabase (paginated, scoped to this admin & campus) ---
+      async function fetchHistory(reset = false) {
+        if (reset) {
+          page = 0;
+          hasMore = true;
+          historyData = [];
+        }
+        if (!hasMore) return;
+
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        const { data, error } = await supabase
+          .from("history_applicants")
+          .select("*")
+          .ilike("Campus", `%${ADMIN_CAMPUS}%`)
+          .in("Status", ["Approved", "Rejected"])
+          .order("decided_at", { ascending: false })
+          .range(from, to);
+
+        if (error) {
+          console.error(error);
+          return;
+        }
+
+        const rows = data || [];
+        historyData = historyData.concat(rows);
+        page += 1;
+        hasMore = rows.length === PAGE_SIZE;
+        renderHistory();
+        toggleLoadMore();
+      }
+
+      // --- Render onscreen table ---
+      function renderHistory() {
+        const tbody = document.getElementById("historyTable");
+        tbody.innerHTML = "";
+
+        let filtered = historyData;
+        if (activeFilter !== "All") {
+          filtered = historyData.filter(
+            (h) =>
+              h.Status && h.Status.toLowerCase() === activeFilter.toLowerCase()
+          );
+        }
+
+        filtered.forEach((row, index) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${escapeHtml(row.Name || "N/A")}</td>
+        <td>${escapeHtml(row.Scholarship_Program || "N/A")}</td>
+        <td>${escapeHtml(row.Campus || "N/A")}</td>
+        <td>${escapeHtml(row.Address || "N/A")}</td>
+        <td><span class="status ${(
+          row.Status || ""
+        ).toLowerCase()}">${escapeHtml(row.Status || "N/A")}</span></td>
+        <td>${formatDate(row.decided_at)}</td>
+        <td>${escapeHtml(row.decided_by || "N/A")}</td>
+      `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // expose renderHistory in case other scripts call it
+      window.renderHistory = renderHistory;
+
+      function setFilter(filter) {
+        activeFilter = filter;
+        renderHistory();
+      }
+
+      window.setFilter = setFilter;
+      function toggleLoadMore() {
+        const el = document.getElementById("loadMoreBtn");
+        if (el) el.style.display = hasMore ? "inline-flex" : "none";
+      }
+
+      function formatDate(dateStr) {
+        if (!dateStr) return "N/A";
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      // --- PDF Preview & Export ---
+      async function openPdfPreviewAndPrepare() {
+        // Prepare pdfPrintArea with filtered rows
+        const pdfBody = document.getElementById("pdfTableBody");
+        pdfBody.innerHTML = "";
+
+        let filtered = historyData;
+        if (activeFilter !== "All") {
+          filtered = historyData.filter(
+            (h) =>
+              h.Status && h.Status.toLowerCase() === activeFilter.toLowerCase()
+          );
+        }
+
+        if (!filtered.length) {
+          alert("No records to export for the current filter.");
+          return;
+        }
+
+        filtered.forEach((row, idx) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td style="width:30px;">${idx + 1}</td>
+            <td>${escapeHtml(row.Name || "")}</td>
+            <td>${escapeHtml(row.Scholarship_Program || "")}</td>
+            <td>${escapeHtml(row.Campus || "")}</td>
+            <td>${escapeHtml(row.Address || "")}</td>
+            <td>${escapeHtml(row.Status || "")}</td>
+            <td>${formatDate(row.decided_at)}</td>
+            <td>${escapeHtml(row.decided_by || "")}</td>
+        `;
+          pdfBody.appendChild(tr);
+        });
+
+        // Set generated date
+        document.getElementById("reportDate").textContent =
+          "Generated: " + new Date().toLocaleString();
+
+        // Insert logo (if uploaded) or fallback
+        const logoHolder = document.getElementById("logoHolder");
+        logoHolder.innerHTML = ""; // clear
+        if (uploadedLogoDataUrl) {
+          const img = document.createElement("img");
+          img.src = uploadedLogoDataUrl;
+          img.id = "logoPreview";
+          logoHolder.appendChild(img);
+        } else {
+          const span = document.createElement("div");
+          span.style.fontWeight = 700;
+          span.style.fontSize = "16px";
+          span.style.color = "#000";
+          span.textContent = "EaseKolar";
+          logoHolder.appendChild(span);
+        }
+
+        // Render the pdfPrintArea to an image using html2canvas
+        const printArea = document.getElementById("pdfPrintArea");
+
+        // temporarily make visible for rendering
+        printArea.style.display = "block";
+        printArea.style.margin = "16px auto";
+        printArea.style.boxShadow = "none"; // remove gray shadows
+
+        // Force black & white
+        printArea.style.filter = "grayscale(100%) contrast(200%)";
+
+        // Give browser a short moment to paint
+        await new Promise((resolve) => setTimeout(resolve, 80));
+
+        // Capture printArea
+        const canvas = await window.html2canvas(printArea, {
+          scale: 2,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          allowTaint: true,
+        });
+
+        // Remove filter after capture
+        printArea.style.filter = "";
+
+        // Hide again
+        printArea.style.display = "none";
+
+        // Convert canvas to dataURL and show in overlay
+        const dataUrl = canvas.toDataURL("image/png");
+
+        const previewImage = document.getElementById("previewImage");
+        previewImage.src = dataUrl;
+
+        // Display meta
+        const previewMeta = document.getElementById("previewMeta");
+        previewMeta.textContent =
+          filtered.length + " rows • " + new Date().toLocaleString();
+
+        // open overlay
+        const overlay = document.getElementById("overlay");
+        overlay.classList.add("open");
+        overlay.setAttribute("aria-hidden", "false");
+
+        // save last captured image for download
+        overlay.dataset.lastImage = dataUrl;
+      }
+
+      async function downloadPdfFromLastPreview() {
+        const overlay = document.getElementById("overlay");
+        const dataUrl = overlay.dataset.lastImage;
+        if (!dataUrl) {
+          alert("No preview available. Please click 'Export PDF' first.");
+          return;
+        }
+
+        // Create jsPDF (landscape A4-ish)
+        const { jsPDF } = window.jspdf;
+        // A4 size in px at 72dpi ~ (595 x 842), but we will use image scaling instead
+        const pdf = new jsPDF({
+          orientation: "landscape",
+          unit: "pt",
+          format: "a4",
+        });
+
+        // add image to PDF fitted to page while preserving aspect ratio
+        const img = new Image();
+        img.src = dataUrl;
+        await new Promise((res) => (img.onload = res));
+
+        // compute image dims for PDF page
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        // scale image to fit inside page with margin
+        const margin = 20;
+        let imgWidth = img.width;
+        let imgHeight = img.height;
+        const ratio = Math.min(
+          (pageWidth - margin * 2) / imgWidth,
+          (pageHeight - margin * 2) / imgHeight
+        );
+        imgWidth = imgWidth * ratio;
+        imgHeight = imgHeight * ratio;
+        const x = (pageWidth - imgWidth) / 2;
+        const y = (pageHeight - imgHeight) / 2;
+
+        pdf.addImage(img, "PNG", x, y, imgWidth, imgHeight, undefined, "FAST");
+
+        // Download
+        pdf.save("application_history_report.pdf");
+      }
+
+      // --- Logo upload handling ---
+      const logoInput = document.getElementById("logoInput");
+      const uploadLogoBtn = document.getElementById("uploadLogoBtn");
+
+      uploadLogoBtn.addEventListener("click", () => logoInput.click());
+
+      logoInput.addEventListener("change", async (ev) => {
+        const file = ev.target.files?.[0];
+        if (!file) return;
+        // read as data URL
+        const reader = new FileReader();
+        reader.onload = () => {
+          uploadedLogoDataUrl = reader.result;
+          // optionally show a tiny thumbnail on the button
+          uploadLogoBtn.textContent = "Logo uploaded";
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // --- Button wiring ---
+      const exportPdfBtn = document.getElementById("exportPdfBtn");
+      const closePreviewBtn = document.getElementById("closePreviewBtn");
+      const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+      const loadMoreBtn = document.getElementById("loadMoreBtn");
+
+      exportPdfBtn.addEventListener("click", openPdfPreviewAndPrepare);
+      closePreviewBtn.addEventListener("click", () => {
+        const overlay = document.getElementById("overlay");
+        overlay.classList.remove("open");
+        overlay.setAttribute("aria-hidden", "true");
+      });
+      downloadPdfBtn.addEventListener("click", downloadPdfFromLastPreview);
+      loadMoreBtn?.addEventListener("click", () => fetchHistory(false));
+
+      // Close overlay when clicking outside modal
+      document.getElementById("overlay").addEventListener("click", (e) => {
+        if (e.target.id === "overlay") {
+          document.getElementById("overlay").classList.remove("open");
+          document
+            .getElementById("overlay")
+            .setAttribute("aria-hidden", "true");
+        }
+      });
+
+      // --- Utility: escape HTML to avoid XSS in table cells ---
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return "";
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      // Load data initially and sidebar
+      window.onload = () => {
+        if (window.loadAdminSidebar) window.loadAdminSidebar("history");
+        fetchHistory(true);
+      };
+    </script>
+  </body>
+</html>

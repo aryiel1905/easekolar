@@ -1,0 +1,28 @@
+{
+  "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "send-sms": "node worker/send-sms-telesign.js",
+    "send-sms:twilio": "node worker/send-sms-twilio.js",
+    "send-sms:clicksend": "node worker/send-sms-clicksend.js",
+    "sms-api": "node server/sms-api.js",
+    "vercel:dev": "vercel dev --listen 8787",
+    "vercel:deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "clicksend": "^5.0.79",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.19.2",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.16.3",
+    "postgres": "^3.4.7",
+    "telesignsdk": "^3.0.4",
+    "twilio": "^4.22.0"
+  },
+  "devDependencies": {
+    "vercel": "^34.0.0"
+  }
+}

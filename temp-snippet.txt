@@ -1,0 +1,11 @@
+    const pending = data.filter(a => a.status === "Pending").length;
+    const approved = data.filter(a => a.status === "Approved").length;
+    const denied = data.filter(a => a.status === "Denied").length;
+
+    // Update the numbers in the cards
+    document.getElementById("totalApps").textContent = total;
+    document.getElementById("pendingApps").textContent = pending;
+    document.getElementById("approvedApps").textContent = approved;
+    document.getElementById("deniedApps").textContent = denied;
+
+    console.log("✅ Dashboard stats updated:", { total, pending, approved, denied });

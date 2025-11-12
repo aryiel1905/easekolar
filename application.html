@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Scholarship Application</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- pdf.js for client-side PDF text extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <style>
+      :root{
+        --bg:#0a1224; --bg2:#0b1630; --card:#111f3d; --border:#243352;
+        --text:#f3f6ff; --muted:#a7b3d3;
+        --accent:#f0c419; --accent-2:#eab308; --accent-hover:#ffd765;
+        --ring:rgba(234,179,8,.35); --radius:18px;
+        --shadow-1:0 10px 26px rgba(0,0,0,.35); --shadow-2:0 22px 60px rgba(0,0,0,.38);
+        --input-bg:#0f1b36; --input-border:#223153; --input-border-hover:#2b3c62;
+        --file-border:#2a3a60; --file-border-hover:#385086;
+        --accent-light: #facc15; /* yellow */
+        --accent-dark: #3b82f6;  /* blue for dark theme accent bar */
+      }
+      .theme-light{
+        --bg:#EEF3F9; --bg2:#E9EFF8; --card:#FFFFFF; --border:#E2EAF5;
+        --text:#0F1A2B; --muted:#64748B; --ring:rgba(234,179,8,.28);
+        --input-bg:#FFFFFF; --input-border:#D8E2EF; --input-border-hover:#C9D6EA;
+        --file-border:#D8E2EF; --file-border-hover:#C9D6EA;
+        --shadow-1:0 8px 24px rgba(15,23,42,.06); --shadow-2:0 16px 40px rgba(15,23,42,.08);
+      }
+
+      *{box-sizing:border-box} html,body{height:100%}
+      body{
+        margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--text);
+        background:radial-gradient(1200px 700px at 70% -10%, var(--bg2) 0%, var(--bg) 55%, #050a18 100%) fixed;
+        background-color:var(--bg);
+      }
+      body:not(.theme-light)::before{
+        content:""; position:fixed; inset:0; pointer-events:none; opacity:.55;
+        background:
+          radial-gradient(1px 1px at 22% 30%, rgba(255,255,255,.18) 99%, transparent 100%),
+          radial-gradient(1px 1px at 44% 70%, rgba(255,255,255,.14) 99%, transparent 100%),
+          radial-gradient(1px 1px at 71% 22%, rgba(255,255,255,.13) 99%, transparent 100%),
+          radial-gradient(1px 1px at 87% 60%, rgba(255,255,255,.18) 99%, transparent 100%),
+          radial-gradient(1px 1px at 12% 82%, rgba(255,255,255,.12) 99%, transparent 100%);
+      }
+
+      main{min-height:100svh; display:flex; align-items:flex-start; justify-content:center; padding:clamp(20px,4vw,40px)}
+      .form-shell{
+        width:min(1200px,100%); background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+        background-color:var(--card); border:1px solid var(--border); border-radius:calc(var(--radius) + 4px);
+        box-shadow:var(--shadow-2); padding:clamp(18px,3.4vw,28px);
+      }
+      .title{margin:0 0 6px; font-size:clamp(22px,2.6vw,28px); font-weight:800; letter-spacing:-.01em}
+      .subtitle{color:var(--muted); margin:0 0 18px}
+
+      form{display:grid; gap:16px}
+      .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+      .grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px}
+      .grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:16px}
+      @media (max-width:900px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+      label{display:block; font-size:12px; font-weight:700; letter-spacing:.02em; color:var(--muted); margin-bottom:6px}
+      input[type="text"], input[type="date"], input[type="email"], input[type="tel"], select{
+        width:100%; color:var(--text); background:var(--input-bg); border:1px solid var(--input-border);
+        border-radius:12px; padding:12px 14px; outline:none; transition:box-shadow .2s, border-color .2s;
+      }
+      input::placeholder{color:#8fa0c4} .theme-light input::placeholder{color:#98a5bf}
+      input:hover{border-color:var(--input-border-hover)}
+      input:focus{box-shadow:0 0 0 4px var(--ring); border-color:transparent}
+
+      /* File control (matches your Upload COG) */
+      .file{
+        position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+        padding:14px; background:var(--input-bg); border:1px dashed var(--file-border); border-radius:12px; cursor:pointer;
+        text-align:center;
+      }
+      .file strong{font-size:13px; color:var(--text)} .file span{font-size:12px; color:var(--muted)}
+      .file:hover{border-color:var(--file-border-hover)}
+      .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+
+      .preview{display:none; margin-top:8px; padding:8px; border:1px solid var(--input-border); background:var(--input-bg);
+        border-radius:12px; justify-content:center; align-items:center;}
+      .preview.active{ display:flex; }
+      .preview img{max-width:100%; max-height:240px; border-radius:8px; display:block; object-fit:contain;}
+
+      /* Inline status for grade check */
+      .status{margin-top:8px; font-size:12px; padding:8px 10px; border-radius:10px; border:1px solid; display:none}
+      .status.ok{display:block; color:#065f46; background:#ecfdf5; border-color:#a7f3d0}
+      .status.fail{display:block; color:#991b1b; background:#fef2f2; border-color:#fecaca}
+      .status.neutral{display:block; color:#1f2937; background:#f3f4f6; border-color:#e5e7eb}
+
+      .submit{margin-top:6px; width:100%; padding:14px 16px; border-radius:14px; font-weight:900; letter-spacing:.02em;
+        border:0; cursor:pointer; color:#0b1220; background:linear-gradient(180deg, var(--accent), var(--accent-2));
+        box-shadow:0 12px 32px rgba(234,179,8,.28);}
+      .submit:hover{background:linear-gradient(180deg, var(--accent-hover), var(--accent))}
+      .submit[disabled]{opacity:.6; cursor:not-allowed; box-shadow:none}
+
+      .toast{position:fixed; right:18px; bottom:18px; background:var(--card); border:1px solid var(--border);
+        color:var(--text); padding:12px 14px; border-radius:12px; box-shadow:var(--shadow-1); display:none;}
+
+      /* Additional Requirements UI */
+      .section-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:8px; }
+      .section-header h3 { font-weight:700; font-size:1.05rem; color:var(--text); margin:0; }
+      .accent-bar { width:6px; height:26px; border-radius:4px; }
+
+      /* theme-adaptive accent */
+      :root .accent-bar { background: var(--accent-light); }
+      .theme-light .accent-bar { background: var(--accent-light); }
+      body:not(.theme-light) .accent-bar { background: var(--accent-dark); }
+
+      /* responsive requirements grid: 4 cols desktop, 2 tablet, 1 mobile */
+      .requirements-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(4, 1fr);
+      }
+      @media (max-width: 1000px) { .requirements-grid { grid-template-columns: repeat(2, 1fr); } }
+      @media (max-width: 560px)  { .requirements-grid { grid-template-columns: 1fr; } }
+
+      /* subtle hover lift */
+      .requirements-grid > div { transition: transform .16s ease, background .16s ease; }
+      .requirements-grid > div:hover { transform: translateY(-3px); background: rgba(255,255,255,0.02); border-radius:10px; }
+
+      /* small utility */
+      .muted { color:var(--muted); font-size:12px; }
+
+      /* Modal popup etc unchanged below (omitted for brevity) */
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <div class="form-shell" id="application">
+        <h1 class="title">Scholarship Application</h1>
+        <p class="subtitle">Fill out the form and upload the required documents.</p>
+
+        <form id="applicationForm" novalidate>
+
+          <!-- SCHOLARSHIP PROGRAM DROPDOWN -->
+<label for="scholarshipProgram">Select Scholarship Program</label>
+<select id="scholarshipProgram" name="scholarshipProgram" required>
+  <option value="">Loading...</option>
+</select>
+
+<div class="grid-4">
+  <div>
+    <label for="fullName">Full Name</label>
+    <input id="fullName" name="fullName" type="text" placeholder="Your Full Name" required />
+  </div>
+  <div>
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" placeholder="yourname@gmail.com" required />
+  </div>
+  <div>
+    <label for="contactNumber">Contact Number</label>
+    <input id="contactNumber" name="contactNumber" type="tel" inputmode="tel" placeholder="+63 9xx xxx xxxx" pattern="^[0-9+()\\-\\.\\s]{7,}$" required />
+  </div>
+  <div>
+    <label for="birthdate">Birthdate</label>
+    <input id="birthdate" name="birthdate" type="date" required />
+  </div>
+</div>
+
+<!-- Address: single full-width row -->
+<div>
+  <label for="address">Address</label>
+  <input id="address" name="address" type="text" placeholder="Street, City, Province" required />
+</div>
+
+  <!-- Row 2: Campus, Department, Course, Year Level -->
+  <div class="grid-4">
+    <div>
+  <label for="campus">Campus</label>
+  <select id="campus" name="campus" required>
+    <option value="">Select Campus</option>
+  </select>
+</div>
+
+    <div>
+  <label for="department">Department</label>
+  <select id="department" name="department" required>
+    <option value="">Select Department</option>
+  </select>
+</div>
+
+    <div>
+      <label for="course">Course</label>
+      <select id="course" name="course" required disabled>
+        <option value="">Select Course</option>
+      </select>
+    </div>
+    <div>
+      <label for="yearLevel">Year Level</label>
+      <select id="yearLevel" name="yearLevel" required>
+        <option value="">Select Year</option>
+        <option>1st Year</option>
+        <option>2nd Year</option>
+        <option>3rd Year</option>
+        <option>4th Year</option>
+      </select>
+    </div>
+  </div>
+
+
+          <!-- Parents -->
+          <div class="grid-4">
+            <div>
+              <label for="mothername">Mother's Name</label>
+              <input id="mothername" name="mothername" type="text" required />
+            </div>
+            <div>
+              <label for="motherno">Mother's Contact</label>
+              <input id="motherno" name="motherno" type="tel" inputmode="tel" placeholder="+63 9xx xxx xxxx" pattern="^[0-9+()\-.\s]{7,}$" />
+            </div>
+            <div>
+              <label for="fathername">Father's Name</label>
+              <input id="fathername" name="fathername" type="text" required />
+            </div>
+            <div>
+              <label for="fatherno">Father's Contact</label>
+              <input id="fatherno" name="fatherno" type="tel" inputmode="tel" placeholder="+63 9xx xxx xxxx" pattern="^[0-9+()\-.\s]{7,}$" />
+            </div>
+          </div>
+
+
+
+          <!-- ADDITIONAL REQUIREMENTS (dynamic) -->
+          <div id="requirementsContainer" style="display:none; margin-top:20px;">
+            <div class="section-header">
+              <div class="accent-bar" aria-hidden="true"></div>
+              <h3>Requirements</h3>
+            </div>
+            <div id="reqUploads" class="requirements-grid"></div>
+          </div>
+
+          <button class="submit" type="submit" id="submitBtn">Submit Application</button>
+          <p id="resultMessage" style="margin-top:10px; font-weight:600; text-align:center; color:var(--muted);"></p>
+
+        </form>
+      </div>
+    </main>
+
+    <!-- Light/Dark toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" aria-pressed="false" title="Toggle theme">
+      <span class="icon" id="themeIcon">🌙</span>
+    </button>
+
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/**********************
+ * THEME TOGGLE
+ **********************/
+const themeToggle = document.getElementById("themeToggle");
+const themeIcon = document.getElementById("themeIcon");
+const THEME_KEY = "scholarship_theme";
+
+function applyTheme(mode) {
+  const isLight = mode === "light";
+  document.body.classList.toggle("theme-light", isLight);
+  themeToggle.setAttribute("aria-pressed", String(isLight));
+  themeIcon.textContent = isLight ? "🌞" : "🌙";
+  localStorage.setItem(THEME_KEY, mode);
+}
+
+const stored = localStorage.getItem(THEME_KEY);
+const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+applyTheme(stored ?? (prefersLight ? "light" : "dark"));
+themeToggle.addEventListener("click", () => {
+  applyTheme(document.body.classList.contains("theme-light") ? "dark" : "light");
+});
+
+/**********************
+ * SUPABASE
+ **********************/
+const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcm5xa29venNsb2VxenhwZ2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1ODQ5MjgsImV4cCI6MjA3NTE2MDkyOH0.E4Lp4LtyvRfFoImUkZMFyVBM7sro4aoNlQEa7sUIsIs";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const form = document.getElementById("applicationForm");
+const submitBtn = document.getElementById("submitBtn");
+const toast = document.getElementById("toast");
+
+// show toast helper
+function showToast(message) {
+  toast.textContent = message;
+  toast.style.display = "block";
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => (toast.style.display = "none"), 4200);
+}
+
+function showResultMessage(message, isError = false) {
+  const el = document.getElementById("resultMessage");
+  if (!el) return;
+  el.textContent = message;
+  el.style.color = isError ? "#ef4444" : "#10b981";
+}
+
+/**********************
+ * DOM ready
+ **********************/
+window.addEventListener("DOMContentLoaded", async () => {
+  const dropdown = document.getElementById("scholarshipProgram");
+  const reqContainer = document.getElementById("requirementsContainer");
+  const reqUploads = document.getElementById("reqUploads");
+
+  if (!dropdown || !reqContainer || !reqUploads) {
+    console.error("Missing DOM elements for requirements section.");
+    return;
+  }
+
+  const campusSelect = document.getElementById("campus");
+const departmentSelect = document.getElementById("department");
+const courseSelect = document.getElementById("course");
+
+const campusData = {
+  "PRMSU Iba": {
+    "College of Business, Accountancy and Public Administration (CBAPA)": [
+      "Bachelor of Science in Accountancy",
+      "Bachelor of Science in Accounting Information System",
+      "Bachelor of Science in Business Administration Major in Financial Management",
+      "Bachelor of Science in Business Administration Major in Human Resource Management",
+      "Bachelor of Science in Business Administration Major in Marketing Management",
+      "Bachelor of Science in Public Administration"
+    ],
+    "College of Tourism and Hospitality Management (CTHM)": [
+      "Bachelor of Science in Tourism Management",
+      "Bachelor of Science in Hospitality Management"
+    ],
+    "College of Arts and Sciences (CAS)": [
+      "Bachelor of Science in Biology",
+      "Bachelor of Science in Psychology"
+    ],
+    "College of Agriculture and Forestry (CAF)": [
+      "Bachelor of Science in Environmental Science"
+    ],
+    "College of Industrial Technology (CIT)": [
+      "Bachelor of Science in Industrial Technology",
+      "Bachelor of Technical Vocational Teacher Education",
+      "Bachelor of Technology and Livelihood Education"
+    ],
+    "College of Communication and Information Technology (CCIT)": [
+      "Bachelor of Science in Computer Science",
+      "Bachelor of Science in Information Technology"
+    ],
+    "College of Nursing (CON)": ["Bachelor of Science in Nursing"],
+    "College of Engineering (COE)": [
+      "Bachelor of Science in Electrical Engineering",
+      "Bachelor of Science in Civil Engineering",
+      "Bachelor of Science in Mechanical Engineering",
+      "Bachelor of Science in Computer Engineering"
+    ]
+  },
+  "PRMSU Castillejos": {
+    "College of Business, Accountancy and Public Administration (CBAPA)": [
+      "Bachelor of Science in Business Administration Major in Human Resource Management",
+    ] ,
+    "College of Communication and Information Technology (CCIT)": [
+      "Bachelor of Science in Computer Science"
+  ]
+  },
+  "PRMSU San Marcelino": {
+    "College of Agriculture and Forestry (CAF)": [
+      "Bachelor of Science in Agriculture",
+      "Bachelor of Science in Agricultural Technology"
+    ],
+    "College of Tourism and Hospitality Management (CTHM)": [
+      "Bachelor of Science in Hospitality Management",
+      "Bachelor of Science in Tourism Management"
+    ],
+    "College of Communication and Information Technology (CCIT)": [
+      "Bachelor of Science in Computer Science"
+
+    ]
+  },
+  "PRMSU Botolan": {
+    "College of Agriculture and Forestry (CAF)": [
+      "Bachelor of Science in Agriculture",
+      "Bachelor of Science in Forestry"
+    ]
+  },
+  "PRMSU Candelaria": {
+    "College of Agriculture and Forestry (CAF)": ["Bachelor of Science in Fisheries"],
+    "College of Communication and Information Technology (CCIT)": [
+      "Bachelor of Science in Information Technology"
+    ]
+  },
+  "PRMSU Masinloc": {
+    "College of Communication and Information Technology (CCIT)": [
+      "Bachelor of Science in Information Technology"
+    ],
+    "College of Business, Accountancy and Public Administration (CBAPA)": [
+      "Bachelor of Science in Business Administration Major in Human Resource Management"
+    ]
+  },
+  "PRMSU Sta. Cruz": {
+    "College of Communication and Information Technology (CCIT)": [
+      "Bachelor of Science in Computer Science"
+    ]
+  }
+};
+
+// Populate campus dropdown
+Object.keys(campusData).forEach(campus => {
+  const opt = document.createElement("option");
+  opt.value = campus;
+  opt.textContent = campus;
+  campusSelect.appendChild(opt);
+});
+
+// When campus changes
+campusSelect.addEventListener("change", () => {
+  const selectedCampus = campusSelect.value;
+
+  departmentSelect.innerHTML = `<option value="">Select Department</option>`;
+  courseSelect.innerHTML = `<option value="">Select Course</option>`;
+  departmentSelect.disabled = true;
+  courseSelect.disabled = true;
+
+  if (selectedCampus && campusData[selectedCampus]) {
+    Object.keys(campusData[selectedCampus]).forEach(dept => {
+      const opt = document.createElement("option");
+      opt.value = dept;
+      opt.textContent = dept;
+      departmentSelect.appendChild(opt);
+    });
+    departmentSelect.disabled = false;
+  }
+});
+
+// When department changes
+departmentSelect.addEventListener("change", () => {
+  const selectedCampus = campusSelect.value;
+  const selectedDepartment = departmentSelect.value;
+
+  courseSelect.innerHTML = `<option value="">Select Course</option>`;
+  courseSelect.disabled = true;
+
+  if (
+    selectedCampus &&
+    selectedDepartment &&
+    campusData[selectedCampus][selectedDepartment]
+  ) {
+    campusData[selectedCampus][selectedDepartment].forEach(course => {
+      const opt = document.createElement("option");
+      opt.value = course;
+      opt.textContent = course;
+      courseSelect.appendChild(opt);
+    });
+    courseSelect.disabled = false;
+  }
+});
+
+////
+
+  // 🧩 Load scholarship programs dynamically from Supabase
+  async function loadScholarshipPrograms() {
+    dropdown.innerHTML = `<option value="" disabled selected>Loading programs…</option>`;
+    const { data, error } = await supabase.from("scholarships").select("id, name, requirements");
+
+    if (error) {
+      console.error("Error loading scholarships:", error);
+      dropdown.innerHTML = `<option value="" disabled selected>Error loading programs</option>`;
+      return;
+    }
+    if (!data || !data.length) {
+      dropdown.innerHTML = `<option value="" disabled selected>No programs available</option>`;
+      return;
+    }
+
+    dropdown.innerHTML = `<option value="">Select a program</option>`;
+    data.forEach((s) => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.name;
+
+      // store requirements properly formatted
+      let reqs = [];
+      if (typeof s.requirements === "string") {
+        reqs = s.requirements
+          .replace(/[{}]/g, "")
+          .split(",")
+          .map((r) => r.trim())
+          .filter((r) => r.length > 0);
+      } else if (Array.isArray(s.requirements)) {
+        reqs = s.requirements;
+      }
+
+      opt.dataset.requirements = JSON.stringify(reqs);
+      dropdown.appendChild(opt);
+    });
+  }
+
+  // 🧩 Parse requirements safely
+  function parseRequirements(raw) {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // handle {req1,req2} format
+      return raw
+        .replace(/[{}]/g, "")
+        .split(",")
+        .map((r) => r.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }
+
+  // 🧩 Render requirements in a 3–4 column grid
+  function renderRequirementUploads(requirements) {
+    reqUploads.innerHTML = "";
+    if (!requirements || !requirements.length) {
+      reqContainer.style.display = "none";
+      return;
+    }
+
+    reqContainer.style.display = "block";
+    reqUploads.style.display = "grid";
+    reqUploads.style.gridTemplateColumns = "repeat(auto-fit, minmax(200px, 1fr))";
+    reqUploads.style.gap = "1rem";
+
+    requirements.forEach((req, idx) => {
+      const cell = document.createElement("div");
+
+      const label = document.createElement("label");
+      label.textContent = req;
+      label.className = "req-label";
+
+      const fileLabel = document.createElement("label");
+      fileLabel.className = "file";
+      fileLabel.setAttribute("for", `req_file_${idx}`);
+      fileLabel.innerHTML = `
+        <strong id="req_file_label_${idx}">Select file</strong>
+        <span class="muted">PDF, JPG or PNG</span>
+      `;
+
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".pdf,.jpg,.jpeg,.png";
+      input.id = `req_file_${idx}`;
+      input.name = req.replace(/\s+/g, "_").toLowerCase();
+      input.className = "sr-only";
+      input.required = true;
+
+      const preview = document.createElement("div");
+      preview.className = "preview";
+      preview.id = `req_preview_${idx}`;
+      preview.innerHTML = `<img alt="${req} preview" />`;
+
+      const img = preview.querySelector("img");
+      let objectUrl = null;
+      input.addEventListener("change", () => {
+        const file = input.files?.[0];
+        const textEl = document.getElementById(`req_file_label_${idx}`);
+        if (textEl) textEl.textContent = file?.name || "Select file";
+
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = null;
+        }
+        if (file && file.type.startsWith("image/")) {
+          objectUrl = URL.createObjectURL(file);
+          img.src = objectUrl;
+          img.alt = `${file.name} preview`;
+          preview.classList.add("active");
+        } else {
+          preview.classList.remove("active");
+          img.removeAttribute("src");
+        }
+      });
+
+      fileLabel.appendChild(input);
+      cell.appendChild(label);
+      cell.appendChild(fileLabel);
+      cell.appendChild(preview);
+      reqUploads.appendChild(cell);
+    });
+  }
+
+  // 🧩 When selecting a program, display its requirements
+  dropdown.addEventListener("change", (e) => {
+    const selected = e.target.options[e.target.selectedIndex];
+    if (!selected) return;
+    const raw = selected.dataset.requirements || "[]";
+    const requirements = parseRequirements(raw);
+    renderRequirementUploads(requirements);
+  });
+
+  await loadScholarshipPrograms();
+
+  /**********************
+   * Existing file preview for static inputs
+   **********************/
+  function setupFileUI(inputId, labelId, previewId) {
+    const input = document.getElementById(inputId);
+    const label = document.getElementById(labelId);
+    const preview = document.getElementById(previewId);
+    if (!input || !label || !preview) return;
+    const img = preview.querySelector("img");
+    let objectUrl = null;
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      label.textContent = file?.name || "Select file";
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
+      if (file && file.type.startsWith("image/")) {
+        objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
+        img.alt = `${file.name} preview`;
+        preview.classList.add("active");
+      } else {
+        preview.classList.remove("active");
+        img.removeAttribute("src");
+      }
+    });
+  }
+
+  setupFileUI("grades", "gradesLabel", "gradesPreview");
+  setupFileUI("indigency", "indigencyLabel", "indigencyPreview");
+
+  /**********************
+   * Form submission (uploads dynamic + static)
+   **********************/
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting…";
+
+    try {
+      const formData = new FormData(form);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        showToast("Please log in before submitting.");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit Application";
+        return;
+      }
+      const uid = user.id;
+
+      async function uploadFileAndGetUrl(file, prefix = "other") {
+        if (!file) return null;
+        const path = `${prefix}/${uid}/${Date.now()}_${file.name}`;
+        const { error: upErr } = await supabase.storage
+          .from("applicants_iskolar")
+          .upload(path, file, { cacheControl: "3600", upsert: false });
+        if (upErr) {
+          console.error("Upload error", upErr);
+          return null;
+        }
+        const { data } = supabase.storage.from("applicants_iskolar").getPublicUrl(path);
+        return data?.publicUrl ?? null;
+      }
+
+      const uploaded = {};
+      uploaded.grades = await uploadFileAndGetUrl(formData.get("grades"), "grades");
+      uploaded.indigency = await uploadFileAndGetUrl(formData.get("indigency"), "indigency");
+
+      const dynamicFiles = {};
+      reqUploads.querySelectorAll("input[type=file]").forEach((inp) => {
+        dynamicFiles[inp.name] = inp.files?.[0] || null;
+      });
+
+      const dynamicUrls = {};
+      for (const [k, f] of Object.entries(dynamicFiles)) {
+        if (f) dynamicUrls[k] = await uploadFileAndGetUrl(f, "requirements");
+      }
+     const programSelect = document.getElementById("scholarshipProgram");
+const selectedProgramName = programSelect.options[programSelect.selectedIndex]?.textContent || null;
+
+const payload = {
+  scholarship_program: selectedProgramName,
+  Name: (formData.get("fullName") || "").toString().trim(),
+  email: (formData.get("email") || "").toString().trim(),
+  contact_number: (formData.get("contactNumber") || "").toString().trim(),
+  birthdate: (formData.get("birthdate") || "").toString(),
+  address: (formData.get("address") || "").toString().trim(),
+  campus: (formData.get("campus") || "").toString(),
+  department: (formData.get("department") || "").toString(),
+  course: (formData.get("course") || "").toString(),
+  year_level: (formData.get("yearLevel") || "").toString(),
+  mother_name: (formData.get("mothername") || "").toString().trim(),
+  mother_number: (formData.get("motherno") || "").toString().trim(),
+  father_name: (formData.get("fathername") || "").toString().trim(),
+  father_number: (formData.get("fatherno") || "").toString().trim(),
+  status: "Pending",
+  upload_requirements: JSON.stringify({ ...uploaded, ...dynamicUrls }),
+};
+
+
+
+      const { error } = await supabase.from("applicants_iskolar").insert([payload]);
+      if (error) {
+        console.error("Insert error", error);
+        showResultMessage("Failed to submit application: " + error.message, true);
+      } else {
+        showToast("✅ Application submitted successfully!");
+        form.reset();
+        const gLabel = document.getElementById("gradesLabel");
+        if (gLabel) gLabel.textContent = "Select file";
+        const iLabel = document.getElementById("indigencyLabel");
+        if (iLabel) iLabel.textContent = "Select file";
+        const gPrev = document.getElementById("gradesPreview");
+        if (gPrev) gPrev.classList.remove("active");
+        const iPrev = document.getElementById("indigencyPreview");
+        if (iPrev) iPrev.classList.remove("active");
+        reqUploads.innerHTML = "";
+        reqContainer.style.display = "none";
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Unexpected error: " + (err?.message || err));
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Application";
+    }
+  });
+});
+</script>
+
+  </body>
+</html>

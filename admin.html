@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Light, soft UI design -->
+  <style>
+    /* === Existing Admin Styles (unchanged) === */
+    :root{
+      --bg: #eef3fb; --panel: #ffffff; --muted: #eaf1ff; --border: #e6eaf2; --text: #0f172a;
+      --sidebar: #fbfdff; --sidebar-border: #e6eaf2; --sidebar-hover: #f0f4ff; --sidebar-active: #e7efff;
+      --thead-bg: #f3f6fe; --thead-text: #475569; --row-hover: #f9fbff;
+      --pill-bg: #eef2ff; --pill-border: #e1e8ff; --pill-text: #3f3f46; --link: #1d4ed8;
+      --content-grad1: #fbfdff; --content-grad2: #f1f5fe;
+      --kpi-total: #e8f3ff; --kpi-pending: #efe9ff; --kpi-approved: #fef7d7; --kpi-denied: #ffe7ea;
+    }
+    [data-theme='dark']{
+      --bg: #0c1424; --panel: #121b2d; --muted: #17233c; --border: #1f2a44; --text: #e6edf7;
+      --sidebar: #0e1627; --sidebar-border: #1f2a44; --sidebar-hover: #13223a; --sidebar-active: #1a2b4a;
+      --thead-bg: #0f1c34; --thead-text: #b8c4dd; --row-hover: #13233f;
+      --pill-bg: #1c2d4d; --pill-border: #25406f; --pill-text: #dbe8ff; --link: #9dc4ff;
+      --content-grad1: #0e1a2f; --content-grad2: #0a1427;
+      --kpi-total: #0e203e; --kpi-pending: #142045; --kpi-approved: #2a2a12; --kpi-denied: #3a1620;
+    }
+    /* === Admin Dropdown Styling === */
+#adminForm select {
+  background: rgba(255, 255, 255, 0.1); /* matches input background */
+  color: #fff; /* ensures text is visible in dark mode */
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  width: 100%;
+  appearance: none; /* removes default arrow for custom styling */
+}
+
+/* Option text */
+#adminForm select option {
+  color: #000; /* black text in dropdown options for readability */
+  background: #fff; /* white background when you open dropdown */
+}
+
+/* Optional: custom arrow */
+#adminForm select::-ms-expand {
+  display: none; /* hide default arrow in IE/Edge */
+}
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      background: var(--bg); color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .container{
+      display: flex; width: 96%; height: 92vh; background: var(--panel);
+      border: 1px solid var(--border); border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(15,23,42,.05); overflow: hidden;
+    }
+    .sidebar{ width: 280px; background: var(--sidebar); border-right: 1px solid var(--sidebar-border);
+      padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+    .brand{ font-weight: 800; font-size: 1.25rem; margin-bottom: 6px; color: var(--text);}
+    .menu{ display:flex; flex-direction:column; gap: 6px;}
+    .menu a{ display:flex; align-items:center; gap:10px; padding:10px 12px;
+      border-radius:12px; color:var(--text); text-decoration:none; transition:.2s;}
+    .menu a:hover{ background: var(--sidebar-hover);}
+    .menu a.active{ background: var(--sidebar-active); border: 1px solid var(--border);}
+    .content{ flex:1; background: linear-gradient(180deg,var(--content-grad1),var(--content-grad2));
+      padding:28px 32px 32px; overflow:auto;}
+    /* Uniform main content width across tabs */
+    .content > *{ max-width:1120px; margin-left:auto; margin-right:auto; }
+    header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+    header h1{ font-size:26px; font-weight:800;}
+    .header-right{ display:flex; align-items:center; gap:10px;}
+    .date-badge{ background: var(--sidebar-hover); border:1px solid var(--border); padding:8px 12px;
+      border-radius:12px; font-size:14px;}
+    .theme-toggle{ background:var(--sidebar-active); border:1px solid var(--border);
+      border-radius:999px; font-weight:700; cursor:pointer; padding:8px 12px;}
+    .card-container{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+      gap:16px; margin-top:18px;}
+    .card{ background:var(--panel); border:1px solid var(--border); border-radius:18px;
+      padding:18px; box-shadow:0 6px 16px rgba(15,23,42,.04);}
+    .kpi-label{ font-size:13px; font-weight:600; color:#6b7280;}
+    [data-theme='dark'] .kpi-label{ color:#aab4c8;}
+    .kpi-value{ font-size:28px; font-weight:800;}
+    .card[data-variant="total"]{ background: var(--kpi-total);}
+    .card[data-variant="pending"]{ background: var(--kpi-pending);}
+    .card[data-variant="approved"]{ background: var(--kpi-approved);}
+    .card[data-variant="denied"]{ background: var(--kpi-denied);}
+    .table-panel{ margin-top:20px; background:var(--panel); border:1px solid var(--border);
+      border-radius:18px; box-shadow:0 6px 16px rgba(15,23,42,.04);}
+    table{ width:100%; border-collapse:collapse;}
+    thead th{ background:var(--thead-bg); color:var(--thead-text); padding:12px 14px; text-align:left;}
+    tbody td{ padding:12px 14px; border-bottom:1px solid var(--border);}
+    .status-pill{ padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700;}
+    .sidebar-bottom{ margin-top:auto; }
+    #logout-btn{ background: var(--text); color: var(--panel); padding: 10px 12px; border-radius: 12px; font-weight: 700; width:100%;}
+     .profile-card{ background: var(--sidebar-active); border:1px solid var(--sidebar-border); border-radius:16px; padding:12px; }
+    .profile-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .avatar{ width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background: var(--sidebar-hover); }
+    .profile-name{ font-weight:800; }
+    .profile-role{ font-size:12px; color:#6b7280; }
+    @media (max-width:860px){ .sidebar{display:none;} .container{width:100%; height:100vh; border-radius:0;} }
+    
+    /* === Scholarship Modal Styles === */
+    .scholarship-modal {display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2000;
+      align-items:center; justify-content:center; padding:20px;}
+   .scholarship-modal .panel {
+  width: min(900px, 95vw);
+  max-height: 90vh; /* limit to screen height */
+  background: linear-gradient(180deg,#0f1d49,#0c183e);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 18px;
+  color: #fff;
+  box-shadow: 0 12px 40px rgba(5,10,25,.45);
+  display: flex;
+  flex-direction: column;
+}
+
+.scholarship-modal .panel-body {
+  flex: 1;
+  overflow-y: auto; /* scroll inside */
+  padding: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.2) transparent;
+}
+
+/* Optional: make the scrollbar look nice */
+.scholarship-modal .panel-body::-webkit-scrollbar {
+  width: 6px;
+}
+.scholarship-modal .panel-body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.3);
+  border-radius: 6px;
+}
+/* === Improved Table Layout === */
+.table-panel {
+  margin-top: 20px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, .04);
+  overflow-x: auto; /* enable horizontal scroll on small screens */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* ensures columns fit evenly */
+}
+
+thead th {
+  background: var(--thead-bg);
+  color: var(--thead-text);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+/* alternate row background for readability */
+tbody tr:nth-child(even) {
+  background-color: var(--muted);
+}
+
+/* make links and buttons look nice */
+tbody a {
+  color: #2563eb;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+tbody button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+tbody button:hover {
+  background: #1e40af;
+}
+
+/* narrow first column (number) */
+th:first-child,
+td:first-child {
+  width: 40px;
+  text-align: center;
+
+}
+
+.status-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-right: 4px;
+}
+
+.status-btn.processing {
+  background-color: #f59e0b;
+}
+.status-btn.processing:hover {
+  background-color: #d97706;
+}
+
+.status-btn.approved {
+  background-color: #22c55e;
+}
+.status-btn.approved:hover {
+  background-color: #16a34a;
+}
+
+.status-btn.rejected {
+  background-color: #ef4444;
+}
+.status-btn.rejected:hover {
+  background-color: #b91c1c;
+}
+
+/* === CLEAN RESPONSIVE TABLE DESIGN === */
+.table-panel {
+  margin-top: 20px;
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+/* Keep header visible while scrolling */
+.table-panel table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1200px; /* avoids squeezing */
+  font-size: 14px;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  color: #1f2937;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+tbody td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+/* Alternate row background for readability */
+tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+/* Status badge */
+.status-pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Buttons */
+.status-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-right: 4px;
+}
+
+.status-btn.processing { background-color: #f59e0b; }
+.status-btn.processing:hover { background-color: #d97706; }
+
+.status-btn.approved { background-color: #22c55e; }
+.status-btn.approved:hover { background-color: #16a34a; }
+
+.status-btn.rejected { background-color: #ef4444; }
+.status-btn.rejected:hover { background-color: #b91c1c; }
+
+/* Prevent button squeezing */
+.status-actions {
+  min-width: 220px;
+  white-space: nowrap;
+}
+
+/* Smooth horizontal scroll bar */
+.table-panel::-webkit-scrollbar {
+  height: 8px;
+}
+.table-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+
+
+/* === Status Badge === */
+.status-pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* === Buttons === */
+.status-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-right: 4px;
+}
+
+.status-btn.processing {
+  background-color: #f59e0b;
+}
+.status-btn.processing:hover {
+  background-color: #d97706;
+}
+
+.status-btn.approved {
+  background-color: #22c55e;
+}
+.status-btn.approved:hover {
+  background-color: #16a34a;
+}
+
+.status-btn.rejected {
+  background-color: #ef4444;
+}
+.status-btn.rejected:hover {
+  background-color: #b91c1c;
+}
+
+/* Responsive scroll wrapper for smaller screens */
+.table-panel::-webkit-scrollbar {
+  height: 8px;
+}
+.table-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+
+
+
+
+    .panel-header {display:flex; justify-content:space-between; align-items:center;
+      padding:18px 20px; border-bottom:1px solid rgba(255,255,255,.08);}
+    .panel-header h3 {margin:0; font-size:18px;}
+    .panel-header .close {cursor:pointer; font-size:24px; color:#d7def7;}
+    .panel-body {padding:20px;}
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px 20px;}
+    .form-grid label {font-weight:600; margin-bottom:4px; display:block;}
+    .form-grid input, .form-grid textarea { width:100%; padding:12px; border-radius:12px;
+      border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#fff;}
+    .form-grid textarea{ resize:vertical; min-height:80px;}
+    .form-grid .span-2{ grid-column:span 2;}
+    .confirm-btn { width:100%; padding:12px; border-radius:14px; border:none; font-weight:900;
+      background:#e0b01a; color:#0b1600; cursor:pointer;}
+    .confirm-btn:hover{ background:#c29300;}
+    .requirements-list {
+      margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; padding:0;
+      list-style:none;
+    }
+    .requirements-list li {
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.25);
+      padding:6px 12px;
+      border-radius:10px;
+      font-size:13px;
+      font-weight:600;
+      color:#fff;
+    }
+
+    table th, table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  text-align: left;
+  min-width: 120px; /* ensures Message column is visible */
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar (shared) -->
+    <div id="sidebar-root"></div>
+
+    <!-- Main -->
+    <main class="content">
+      <header>
+        <h1>Admin Dashboard</h1>
+        <div class="header-right">
+          <div class="date-badge" id="date-badge"></div>
+          <button id="theme-toggle" class="theme-toggle">Dark</button>
+        </div>
+      </header>
+
+      <!-- KPIs -->
+      <div class="card-container">
+        <div class="card" data-variant="total"><div class="kpi-label">Total</div><div id="totalApps" class="kpi-value">0</div></div>
+        <div class="card" data-variant="pending"><div class="kpi-label">Pending</div><div id="pendingApps" class="kpi-value">0</div></div>
+        <div class="card" data-variant="approved"><div class="kpi-label">Approved</div><div id="approvedApps" class="kpi-value">0</div></div>
+        <div class="card" data-variant="denied"><div class="kpi-label">Rejected</div><div id="deniedApps" class="kpi-value">0</div></div>
+      </div>
+
+      <!-- Table -->
+     <div class="table-panel">
+  <!-- Status filter toolbar -->
+  <div style="display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;">
+    <label for="statusFilter" style="font-size:13px;align-self:center;">Filter:</label>
+    <select id="statusFilter" style="padding:6px 8px;border:1px solid var(--border, #e5e7eb);border-radius:8px;">
+      <option value="All" selected>All (Pending + Processing)</option>
+      <option value="Pending">Pending</option>
+      <option value="Processing">Processing</option>
+    </select>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Scholarship</th>
+        <th>Campus</th>
+        <th>Address</th>
+        <th>Files</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="appTable"></tbody>
+  </table>
+</div>
+
+    </main>
+  </div>
+
+  <!-- === Scholarship Modal === -->
+  <div class="scholarship-modal" id="scholarshipModal">
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Scholarship Management</h3>
+        <span class="close" id="closeScholarshipModal">&times;</span>
+      </div>
+      <div class="panel-body">
+        <div id="scholarshipList" 
+     class="grid" 
+     style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:24px;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === Scholarship Form Modal === -->
+  <div class="scholarship-modal" id="scholarshipFormModal">
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Add Scholarship</h3>
+        <span class="close" id="closeFormModal">&times;</span>
+      </div>
+      <form class="panel-body" id="scholarshipForm">
+        <div class="form-grid">
+          <div class="span-2"><label for="schName">Scholarship Name</label><input type="text" id="schName" name="schName" required></div>
+          <div><label for="schGrade">Grade Requirements</label><input type="text" id="schGrade" name="schGrade" required></div>
+          <div><label for="schAmount">Amount</label><input type="text" id="schAmount" name="schAmount" required></div>
+          <div class="span-2">
+            <label for="schRequirement">Required Documents</label>
+            <input type="text" id="schRequirement" placeholder="Type a document and press Enter">
+            <ul id="requirementsPreview" class="requirements-list"></ul>
+          </div>
+          <div class="span-2"><label for="schDesc">Description</label><textarea id="schDesc" name="schDesc" required></textarea></div>
+          <div class="span-2"><button type="submit" class="confirm-btn">Save Scholarship</button></div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- === Action Modal (status + message) === -->
+  <div class="scholarship-modal" id="actionModal">
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Update Application Status</h3>
+        <span class="close" onclick="closeActionModal()">&times;</span>
+      </div>
+      <div class="panel-body">
+        <p style="margin:0 0 10px; color:#cbd5e1;">Selected status: <strong id="actionStatusLabel">-</strong></p>
+        <p style="margin:0 0 10px; color:#94a3b8;">
+          <span id="actionPreviewName">Applicant</span>
+          <span id="actionPreviewContact" style="margin-left:8px; opacity:.9;"></span>
+        </p>
+        <label for="actionMessage" style="display:block; font-size:13px; color:#cbd5e1; margin-bottom:6px;">Message to applicant (SMS & in-app)</label>
+        <textarea id="actionMessage" rows="4" style="width:100%; resize:vertical; border-radius:12px; padding:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:#fff;"></textarea>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button class="bg-gray-500 text-white px-3 py-2 rounded" onclick="closeActionModal()">Cancel</button>
+          <button class="bg-blue-600 text-white px-3 py-2 rounded" onclick="confirmAction()">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="fileModal" class="fixed inset-0 bg-black bg-opacity-40 hidden flex items-center justify-center">
+  <div class="bg-white rounded-lg shadow-lg p-6 w-80">
+    <h2 class="text-xl font-bold mb-4">Applicant Files</h2>
+
+    <div id="fileLinks" class="flex flex-col gap-2"></div>
+
+    <button onclick="closeFileMenu()" class="mt-5 bg-red-500 text-white rounded px-3 py-2 w-full">
+      Close
+    </button>
+  </div>
+</div>
+
+
+
+<!-- Admin Modal HTML (updated) -->
+<div class="scholarship-modal" id="adminModal">
+  <div class="panel">
+    <div class="panel-header">
+      <h3>Add Admin</h3>
+      <span class="close" id="closeAdminModal">&times;</span>
+    </div>
+<form class="panel-body" id="adminForm" autocomplete="off">
+  <div class="form-grid">
+    <div class="span-2">
+      <label for="adminName">Full Name</label>
+      <input type="text" id="adminName" name="adminName" required autocomplete="off">
+    </div>
+    <div class="span-2">
+      <label for="adminEmail">Email</label>
+      <input type="email" id="adminEmail" name="adminEmail" required autocomplete="off">
+    </div>
+    <div class="span-2">
+      <label for="adminPassword">Password</label>
+      <input type="password" id="adminPassword" name="adminPassword" required autocomplete="new-password">
+    </div>
+    <div class="span-2">
+      <label for="adminPhone">Phone Number</label>
+      <input type="text" id="adminPhone" name="adminPhone" required autocomplete="off">
+    </div>
+    <div class="span-2">
+      <label for="adminCampus">Campus</label>
+      <select id="adminCampus" name="adminCampus" required>
+        <option value="">Select Campus</option>
+        <option value="Sta Cruz">Sta Cruz</option>
+        <option value="Candelaria">Candelaria</option>
+        <option value="Masinloc">Masinloc</option>
+        <option value="Iba">Iba</option>
+        <option value="Caste">Caste</option>
+        <option value="San Marcelino">San Marcelino</option>
+      </select>
+    </div>
+
+    <span id="notifBadge" style="
+  background:red;
+  color:white;
+  padding:3px 8px;
+  border-radius:50%;
+  font-size:12px;
+  display:none;
+  position:absolute;
+  top:0;
+  right:0;
+">!</span>
+
+
+    <div class="span-2">
+      <label for="adminRole">Role</label>
+      <select id="adminRole" name="adminRole" required>
+        <option value="">Select Role</option>
+        <option value="main_admin">Main Admin</option>
+        <option value="program_admin">Program Admin</option>
+      </select>
+    </div>
+    <div class="span-2">
+      <button type="submit" class="confirm-btn">Add Admin</button> <!-- This is the Add button -->
+    </div>
+  </div>
+</form>
+
+<!-- FILE MODAL -->
+
+
+  <!-- === Scripts === -->
+  <script src="shared/sidebar.js" defer></script>
+  <script>
+    // load shared sidebar and mark Dashboard as active
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.loadAdminSidebar) window.loadAdminSidebar('dashboard');
+    });
+  </script>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcm5xa29venNsb2VxenhwZ2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1ODQ5MjgsImV4cCI6MjA3NTE2MDkyOH0.E4Lp4LtyvRfFoImUkZMFyVBM7sro4aoNlQEa7sUIsIs";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const EDGE_BASE = SUPABASE_URL.replace('supabase.co','functions.supabase.co');
+    const SEND_SMS_FN = `${EDGE_BASE}/send-sms-clicksend`;
+
+    // === Admin context (merged from admin.txt) ===
+    const ADMIN_CAMPUS = (localStorage.getItem("adminCampus") || "").trim();
+    const ADMIN_ROLE = (localStorage.getItem("adminRole") || "").trim();
+    const ADMIN_NAME = (localStorage.getItem("adminName") || "Admin").trim();
+    if (!ADMIN_CAMPUS) {
+      // if campus is not set, route to login to establish context
+      window.location.href = "login-signup.html";
+    }
+// === Dashboard Statistics ===
+
+
+
+async function checkNewApplicationsOnLoad() {
+  const { data, error } = await supabase
+    .from("applicants_iskolar")
+    .select("id", {count: "exact"})
+    .eq("campus", ADMIN_CAMPUS);
+
+  if (error) return;
+
+  const currentCount = data.length;
+  const lastCount = localStorage.getItem("app_count") || 0;
+
+  if (currentCount > lastCount) {
+    showNotification(`You have ${currentCount - lastCount} new application(s)!`);
+  }
+
+  localStorage.setItem("app_count", currentCount);
+}
+
+
+
+
+
+function showBadge() {
+  document.getElementById("notifBadge").style.display = "inline-block";
+}
+
+
+
+// MUST attach to window so HTML can access it
+window.openFileMenu = function(appId) {
+  const applicant = window.allApplicants.find(a => a.id === appId);
+
+  if (!applicant || !applicant.upload_requirements) {
+    document.getElementById("fileLinks").innerHTML = "<p>No files submitted.</p>";
+    document.getElementById("fileModal").classList.remove("hidden");
+    return;
+  }
+
+  let req;
+  try {
+    req = JSON.parse(applicant.upload_requirements);
+  } catch (e) {
+    document.getElementById("fileLinks").innerHTML = "<p>Invalid file data.</p>";
+    document.getElementById("fileModal").classList.remove("hidden");
+    return;
+  }
+
+  let html = "";
+
+  Object.entries(req).forEach(([key, value]) => {
+    if (value) {
+      let label = key.replace(/_/g, " ")
+                     .replace(/\b\w/g, c => c.toUpperCase());
+      html += `<a href="${value}" target="_blank" class="block text-blue-600 underline mb-2">${label}</a>`;
+    }
+  });
+
+  if (!html) html = "<p>No requirements uploaded.</p>";
+
+  document.getElementById("fileLinks").innerHTML = html;
+  document.getElementById("fileModal").classList.remove("hidden");
+};
+
+
+// also attach close to window
+window.closeFileMenu = function() {
+  document.getElementById("fileModal").classList.add("hidden");
+}
+
+
+async function loadDashboardStats() {
+  try {
+    // ✅ Use 'supabase' (not supabaseClient)
+    const { data, error } = await supabase
+      .from("applicants_iskolar")
+      .select("status")
+      .eq("campus", ADMIN_CAMPUS);
+
+    if (error) throw error;
+
+    // Count totals by status (treat "Processing" as pending)
+    const total = data.length;
+    const pending = data.filter(a => {
+      const s = (a.status || "").toLowerCase().trim();
+      return s === "pending" || s === "processing";
+    }).length;
+    const approved = data.filter(a => (a.status || "").toLowerCase().trim() === "approved").length;
+    const rejected = data.filter(a => (a.status || "").toLowerCase().trim() === "rejected").length;
+    const denied = rejected; // maintain legacy variable used in logging
+
+    // Update the numbers in the cards
+    document.getElementById("totalApps").textContent = total;
+    document.getElementById("pendingApps").textContent = pending;
+    document.getElementById("approvedApps").textContent = approved;
+    document.getElementById("deniedApps").textContent = rejected;
+
+    console.log("✅ Dashboard stats updated:", { total, pending, approved, denied });
+  } catch (err) {
+    console.error("❌ Error loading dashboard stats:", err.message);
+  }
+}
+
+// Call this function on page load
+loadDashboardStats();
+
+
+    // === Scholarship Modal Logic ===
+    const scholarshipModal = document.getElementById("scholarshipModal");
+    const openScholarshipModal = document.getElementById("openScholarshipModal");
+    const closeScholarshipModal = document.getElementById("closeScholarshipModal");
+    const formModal = document.getElementById("scholarshipFormModal");
+    const closeFormModal = document.getElementById("closeFormModal");
+    const scholarshipForm = document.getElementById("scholarshipForm");
+    const requirementInput = document.getElementById("schRequirement");
+    const requirementsPreview = document.getElementById("requirementsPreview");
+
+    let requirements = [];
+
+    requirementInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const value = requirementInput.value.trim();
+        if (value) {
+          requirements.push(value);
+          renderRequirements();
+          requirementInput.value = "";
+        }
+      }
+    });
+
+    function renderRequirements() {
+      requirementsPreview.innerHTML = "";
+      requirements.forEach((req) => {
+        const li = document.createElement("li");
+        li.textContent = req;
+        requirementsPreview.appendChild(li);
+      });
+    }
+
+    function handleOpenScholarships(e){
+      e && e.preventDefault && e.preventDefault();
+      scholarshipModal.style.display = "flex";
+      fetchScholarships();
+    }
+    if (openScholarshipModal) {
+      openScholarshipModal.addEventListener("click", handleOpenScholarships);
+    }
+    // Fallback if sidebar is injected after this script
+    document.addEventListener('click', (ev) => {
+      const t = ev.target;
+      if (t && (t.id === 'openScholarshipModal')) handleOpenScholarships(ev);
+    });
+
+    closeScholarshipModal.addEventListener("click", ()=>{ scholarshipModal.style.display="none"; });
+    closeFormModal.addEventListener("click", ()=>{ formModal.style.display="none"; });
+    window.addEventListener("click", (e)=>{
+      if(e.target===scholarshipModal) scholarshipModal.style.display="none";
+      if(e.target===formModal) formModal.style.display="none";
+      if(e.target===adminModal) adminModal.style.display="none";
+      if(e.target===document.getElementById('actionModal')) closeActionModal();
+    });
+
+    scholarshipForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = {
+        name: scholarshipForm.schName.value,
+        grade: scholarshipForm.schGrade.value,
+        requirements: requirements,
+        amount: scholarshipForm.schAmount.value,
+        description: scholarshipForm.schDesc.value
+      };
+
+      const { error } = await supabase
+        .from("scholarships")
+        .insert([data]);
+
+      if (error) {
+        console.error("Error saving scholarship:", error);
+        alert("❌ Failed to save scholarship. Check console.");
+      } else {
+        alert("✅ Scholarship saved to Supabase!");
+        formModal.style.display = "none";
+        scholarshipForm.reset();
+        requirements = [];
+        renderRequirements();
+        fetchScholarships();
+      }
+    });
+    
+
+   
+
+    // === Admin Modal Logic ===
+    
+// Admin Modal JS Logic
+const adminModal = document.getElementById("adminModal");
+const openAdminModal = document.getElementById("openAdminModal");
+const closeAdminModal = document.getElementById("closeAdminModal");
+const adminForm = document.getElementById("adminForm");
+
+// Open / Close Modal
+function handleOpenAdmin(e){
+  e && e.preventDefault && e.preventDefault();
+  adminModal.style.display = "flex";
+}
+if (openAdminModal) {
+  openAdminModal.addEventListener("click", handleOpenAdmin);
+}
+document.addEventListener('click', (ev) => {
+  const t = ev.target;
+  if (t && (t.id === 'openAdminModal')) handleOpenAdmin(ev);
+});
+
+
+
+closeAdminModal.addEventListener("click", () => {
+  adminModal.style.display = "none";
+});
+window.addEventListener("click", e => {
+  if (e.target === adminModal) adminModal.style.display = "none";
+});
+
+// Add Admin Submission
+// Add Admin Submission
+adminForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const adminData = {
+    full_name: adminForm.adminName.value.trim(),
+    email: adminForm.adminEmail.value.trim(),
+    password: adminForm.adminPassword.value.trim(),
+    phone_number: adminForm.adminPhone.value.trim(),
+    campus: adminForm.adminCampus.value,
+    role: adminForm.adminRole.value  // <-- now dynamic
+  };
+
+  const { error } = await supabase
+    .from("admins")
+    .insert([adminData]);
+
+  if (error) {
+    console.error("Error adding admin:", error);
+    alert("❌ Failed to add admin. Check console for details.");
+  } else {
+    alert("✅ Admin added successfully!");
+    adminForm.reset();
+    adminModal.style.display = "none";
+  }
+});
+
+
+
+    const themeToggle = document.getElementById("theme-toggle");
+    themeToggle.addEventListener("click", () => {
+      const currentTheme = document.documentElement.getAttribute("data-theme");
+      if (currentTheme === "dark") {
+        document.documentElement.removeAttribute("data-theme");
+        themeToggle.textContent = "Dark";
+      } else {
+        document.documentElement.setAttribute("data-theme", "dark");
+        themeToggle.textContent = "Light";
+      }
+    });
+
+    async function fetchScholarships() {
+      const { data, error } = await supabase
+        .from("scholarships")
+        .select("*")
+        .order("created_at", { ascending: false });
+        
+
+      const list = document.getElementById("scholarshipList");
+      list.innerHTML = ""; 
+
+      if (error) {
+        console.error("Error fetching scholarships:", error);
+        list.innerHTML = `<p style="color:#fff;">Failed to load scholarships.</p>`;
+        return;
+      }
+
+      data.forEach((sch) => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.style.background = "linear-gradient(180deg,#0f1d49,#0c183e)";
+        card.style.border = "1px solid rgba(255,255,255,.14)";
+        card.style.borderRadius = "22px";
+        card.style.padding = "24px";
+        card.style.color = "#fff";
+
+        card.innerHTML = `
+          <h3 style="margin:0; font-size:18px; font-weight:700;">${sch.name}</h3>
+          <p style="margin:6px 0 10px; font-size:14px;">${sch.description}</p>
+          <p><strong>Grade:</strong> ${sch.grade}</p>
+          <p><strong>Amount:</strong> ${sch.amount}</p>
+          <p><strong>Required Docs:</strong> ${sch.requirements.join(", ")}</p>
+        `;
+
+        list.appendChild(card);
+      });
+
+
+      
+
+      
+
+      const addCard = document.createElement("div");
+      addCard.className = "card";
+      addCard.id = "openFormBtn";
+      addCard.style.display = "flex";
+      addCard.style.alignItems = "center";
+      addCard.style.justifyContent = "center";
+      addCard.style.cursor = "pointer";  
+      
+      addCard.style.background = "linear-gradient(180deg,#0f1d49,#0c183e)";
+      addCard.style.border = "1px solid rgba(255,255,255,.14)";
+      addCard.style.borderRadius = "22px";
+      addCard.style.padding = "24px";
+      addCard.style.color = "#fff";
+      addCard.innerHTML = `
+        <div style="text-align:center;">
+          <div style="font-size:40px; margin-bottom:8px;">➕</div>
+          <h3 style="margin:0; font-size:16px;">Add Scholarship</h3>
+        </div>
+      `;
+      addCard.addEventListener("click", () => { formModal.style.display = "flex"; });
+      list.appendChild(addCard);
+    }
+
+
+    // make toggle global so inline onclick can find it
+window.toggleActionMenu = function(id) {
+  const menu = document.getElementById(`actionMenu-${id}`);
+  if (!menu) return;
+  // toggle hidden and ensure other menus are closed
+  document.querySelectorAll("[id^='actionMenu-']").forEach(m => {
+    if (m.id !== menu.id) m.classList.add("hidden");
+  });
+  menu.classList.toggle("hidden");
+};
+
+// helper used by menu items: update status, hide menu, refresh table
+window._updateStatusAndClose = async function(id, newStatus) {
+  // hide the menu immediately for better UX
+  const menu = document.getElementById(`actionMenu-${id}`);
+  if (menu) menu.classList.add("hidden");
+
+  try {
+    // reuse your existing updateStatus function (already attached to window)
+    if (typeof window.updateStatus === "function") {
+      await window.updateStatus(id, newStatus);
+    } else {
+      // fallback: simple inline Supabase update if updateStatus not available yet
+      const { data, error } = await supabase
+        .from("applicants_iskolar")
+        .update({ status: newStatus })
+        .eq("id", id)
+        .select();
+      if (error) throw error;
+      // refresh table if you have fetchApplicants()
+      if (typeof window.fetchApplicants === "function") window.fetchApplicants();
+      alert(`✅ Applicant status updated to ${newStatus}`);
+    }
+  } catch (err) {
+    console.error("Error updating status from dropdown:", err);
+    alert("❌ Failed to update status. Check console.");
+  }
+};
+
+// close open menus when clicking outside
+document.addEventListener("click", function(e) {
+  // if click is inside any actionMenu or its toggle button, do nothing
+  const openMenus = Array.from(document.querySelectorAll("[id^='actionMenu-']"));
+  for (const menu of openMenus) {
+    const toggleBtn = menu.previousElementSibling; // the button placed right before menu in our markup
+    if (menu.contains(e.target) || (toggleBtn && toggleBtn.contains(e.target))) {
+      return; // clicked inside a menu or its button
+    }
+  }
+  // otherwise close all action menus
+  openMenus.forEach(m => m.classList.add("hidden"));
+});
+
+// === Status filter state & wiring ===
+let currentStatusFilter = 'All';
+const statusFilterEl = document.getElementById('statusFilter');
+if (statusFilterEl) {
+  statusFilterEl.value = currentStatusFilter;
+  statusFilterEl.addEventListener('change', (e) => {
+    currentStatusFilter = e.target.value || 'All';
+    fetchApplicants();
+  });
+}
+
+/// === FETCH ALL APPLICANTS ===
+async function fetchApplicants() {
+  const tableBody = document.getElementById("appTable");
+  if (!tableBody) {
+    console.error("❌ Table element with ID 'appTable' not found in DOM.");
+    return;
+  }
+
+  // Show loading
+  tableBody.innerHTML = "<tr><td colspan='8'>Loading applicants...</td></tr>";
+
+  // Fetch data from Supabase
+  const { data, error } = await supabase
+    .from("applicants_iskolar")
+    .select("*")
+    .eq("campus", ADMIN_CAMPUS)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("❌ Error fetching applicants:", error);
+    tableBody.innerHTML =
+      "<tr><td colspan='8'>Failed to load applicants (check console)</td></tr>";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    tableBody.innerHTML =
+      "<tr><td colspan='8'>No applicants found in database.</td></tr>";
+    return;
+  }
+
+  window.allApplicants = data;
+
+  // Strict dashboard visibility: only Pending/Processing
+  const filter = (currentStatusFilter || 'All').toLowerCase();
+  const visibleApplicants = data.filter((app) => {
+    const status = (app.status || 'Pending').trim().toLowerCase();
+    const isUnderReview = (status === 'pending' || status === 'processing');
+    if (!isUnderReview) return false; // hide approved/rejected from dashboard
+    if (filter === 'all') return true; // show both
+    return status === filter; // show specific (Pending or Processing)
+  });
+
+  // KPI Counters
+  let approvedCount = 0;
+  let rejectedCount = 0;
+  let pendingCount = 0;
+
+  data.forEach((app) => {
+    const normalizedStatus = (app.status || "").trim().toLowerCase();
+    if (normalizedStatus === "approved") approvedCount++;
+    else if (normalizedStatus === "rejected") rejectedCount++;
+    else if (normalizedStatus === "pending" || normalizedStatus === "processing") pendingCount++;
+  });
+
+  // Clear table
+  tableBody.innerHTML = "";
+
+  // Render only visible applicants
+  visibleApplicants.forEach((app, index) => {
+    const status = app.status || "Pending";
+
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-id", app.id);
+
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td><div>${app.Name || "N/A"}</div><div style="font-size:12px; color:#6b7280">${(app.email || "").trim()}${(app.contact_number ? ` • ${app.contact_number}` : "")}</div></td>
+      <td>${app.scholarship_program || "N/A"}</td>
+      <td>${app.campus || "N/A"}</td>
+      <td>${app.address || "N/A"}</td>
+      <td class="text-center">
+        <button class="bg-blue-500 text-white px-2 py-1 rounded" onclick="openFileMenu(${app.id})">
+          Files ▼
+        </button>
+      </td>
+      <td>
+        <span class="status-pill" style="${
+          status.toLowerCase() === "processing"
+            ? "background:#fef9c3; padding:4px 8px; border-radius:8px;"
+            : "background:#e5e7eb; padding:4px 8px; border-radius:8px;"
+        }">
+          ${status}
+        </span>
+      </td>
+      <td class="relative">
+        <button 
+          class="bg-orange-500 text-white px-2 py-1 rounded"
+          onclick="toggleActionMenu(${app.id})"
+        >
+          Action ▼
+        </button>
+        <div id="actionMenu-${app.id}" 
+             class="hidden absolute right-0 mt-1 bg-white border rounded shadow p-2 z-50">
+          <button class="block w-full text-left px-2 py-1 hover:bg-gray-100"
+                  onclick="openActionModal(${app.id}, 'Processing')">
+            Processing
+          </button>
+          <button class="block w-full text-left px-2 py-1 hover:bg-gray-100"
+                  onclick="openActionModal(${app.id}, 'Approved')">
+            Approved
+          </button>
+          <button class="block w-full text-left px-2 py-1 hover:bg-gray-100"
+                  onclick="openActionModal(${app.id}, 'Rejected')">
+            Rejected
+          </button>
+        </div>
+      </td>
+    `;
+
+    tableBody.appendChild(tr);
+  });
+
+  // Update KPI Boxes
+  document.getElementById("totalApps").textContent = data.length;
+  document.getElementById("approvedApps").textContent = approvedCount;
+  document.getElementById("deniedApps").textContent = rejectedCount;
+  document.getElementById("pendingApps").textContent = pendingCount;
+}
+
+// === Send Message Function ===
+window.sendMessage = async function(applicantId) {
+  const messageInput = document.getElementById(`message-${applicantId}`);
+  const message = messageInput.value.trim();
+
+  if (!message) return alert("Please type a message first.");
+
+  const { data, error } = await supabase
+    .from("applicants_iskolar")
+    .update({ message })
+    .eq("id", applicantId);
+
+  if (error) {
+    console.error("Error sending message:", error);
+    alert("Failed to send message. Check console.");
+  } else {
+    alert("Message sent to applicant!");
+    messageInput.value = ""; // ✅ Clear input after sending
+  }
+};
+
+// Run on page load
+fetchApplicants();
+
+
+
+
+async function updateStatus(id, newStatus) {
+
+  // ✅ Ask first before updating
+  const confirmUpdate = confirm(`Are you sure you want to set this applicant's status to "${newStatus}"?`);
+  if (!confirmUpdate) return;
+
+  // update main table
+  const { error: updateError } = await supabase
+    .from("applicants_iskolar")
+    .update({ status: newStatus })
+    .eq("id", id);
+
+  if (updateError) {
+    console.error(updateError);
+    alert("❌ Failed to update status!");
+    return;
+  }
+
+  // Re-render list according to the active filter
+
+  // Only insert into history if status is 'Approved' or 'Rejected'
+  if (["approved", "rejected"].includes(newStatus.toLowerCase())) {
+
+    // get applicant data
+    const { data: applicant, error: applicantError } = await supabase
+      .from("applicants_iskolar")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (applicantError) {
+      console.error(applicantError);
+      alert("❌ Failed to fetch applicant data for history!");
+      return;
+    }
+
+    // get current admin
+  const { data: { user } } = await supabase.auth.getUser();
+const decidedBy = user?.user_metadata?.full_name || "Unknown Admin";
+
+
+    // insert into history table
+    const { error: historyError } = await supabase
+      .from("history_applicants")
+      .insert({
+        Name: applicant.Name,
+        Scholarship_Program: applicant.scholarship_program,
+        Campus: applicant.campus,
+        Address: applicant.address,
+        Status: newStatus,
+        decided_at: new Date().toISOString(),
+        decided_by: decidedBy
+      });
+
+    if (historyError) {
+      console.error(historyError);
+      alert("⚠️ Failed to save history record!");
+      return;
+    }
+  }
+
+  // ✅ Optional: update KPI counters immediately
+  fetchApplicants(); // refresh visible applicants and counters
+
+  // ✅ Success message
+  alert(`✅ Status updated to "${newStatus}" successfully!`);
+}
+
+// ✅ expose globally
+window.updateStatus = updateStatus;
+
+// ===== Action Modal + SMS Queueing =====
+let pendingAction = null;
+function defaultMessageFor(status, app){
+  const name = app?.Name || 'Applicant';
+  const program = app?.scholarship_program || 'your application';
+  const campus = app?.campus || '';
+  const s = (status||'').toLowerCase();
+  if (s === 'approved') return `Hi ${name}, your ${program} at ${campus} has been APPROVED. Please check your portal for next steps.`;
+  if (s === 'rejected') return `Hi ${name}, your ${program} at ${campus} was NOT approved. You may review requirements and re-apply in the next cycle.`;
+  return `Hi ${name}, your ${program} is now PROCESSING. We will update you once a decision is made.`;
+}
+
+function normalizePhonePH(p){
+  if (!p) return null;
+  let d = String(p).replace(/[^0-9+]/g, '');
+  if (d.startsWith('+')) return d; // assume already E.164
+  d = d.replace(/[^0-9]/g, '');
+  if (d.startsWith('09') && d.length === 11) return '+63' + d.slice(1);
+  if (d.startsWith('9') && d.length === 10) return '+63' + d;
+  if (d.startsWith('639') && d.length === 12) return '+' + d;
+  return null;
+}
+
+function openActionModal(id, newStatus){
+  const app = (window.allApplicants || []).find(a => a.id === id);
+  if (!app) { alert('Applicant not found.'); return; }
+  pendingAction = { id, newStatus, app };
+  document.getElementById('actionStatusLabel').textContent = newStatus;
+  document.getElementById('actionPreviewName').textContent = app.Name || 'Applicant';
+  document.getElementById('actionPreviewContact').textContent = `${app.email || ''}${app.contact_number ? ' • ' + app.contact_number : ''}`;
+  const ta = document.getElementById('actionMessage');
+  ta.value = defaultMessageFor(newStatus, app);
+  const menu = document.getElementById(`actionMenu-${id}`);
+  if (menu) menu.classList.add('hidden');
+  document.getElementById('actionModal').style.display = 'flex';
+}
+
+function closeActionModal(){
+  document.getElementById('actionModal').style.display = 'none';
+  pendingAction = null;
+}
+
+async function confirmAction(){
+  if (!pendingAction) return;
+  const { id, newStatus, app } = pendingAction;
+  const message = (document.getElementById('actionMessage').value || '').trim();
+
+  // 1) Update status and store message (in-app notice uses this field)
+  const { error: updateError } = await supabase
+    .from('applicants_iskolar')
+    .update({ status: newStatus, message })
+    .eq('id', id);
+  if (updateError) {
+    console.error(updateError);
+    alert('Failed to update status.');
+    return;
+  }
+
+  // 2) History for Approved/Rejected
+  if (["approved","rejected"].includes(newStatus.toLowerCase())){
+    const { data: { user } } = await supabase.auth.getUser();
+    const decidedBy = user?.user_metadata?.full_name || 'Unknown Admin';
+    const { error: historyError } = await supabase
+      .from('history_applicants')
+      .insert({
+        Name: app.Name,
+        Scholarship_Program: app.scholarship_program,
+        Campus: app.campus,
+        Address: app.address,
+        Status: newStatus,
+        decided_at: new Date().toISOString(),
+        decided_by: decidedBy
+      });
+    if (historyError) console.warn('History insert error:', historyError);
+  }
+
+  // 3) Immediate SMS via local API (Processing/Approved/Rejected)
+  try {
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const API_BASE = isLocal
+  ? 'http://127.0.0.1:8787'
+  : 'https://easekolar.vercel.app/api';
+    const toNorm = normalizePhonePH(app.contact_number || '');
+    if (toNorm) {
+      await fetch(`${API_BASE}/sms/send`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    applicant_id: id,
+    email: app.email || null,
+    to: toNorm,
+    message: message || `Your application is now ${newStatus}.`,
+    status: newStatus,
+  }),
+});
+    } else {
+      console.warn('Invalid phone for applicant id=', id);
+    }
+  } catch (e) {
+    console.warn('Local API send error:', e);
+  }
+
+  closeActionModal();
+  fetchApplicants();
+  alert(`Status updated to "${newStatus}".`);
+}
+
+
+
+  
+// expose modal handlers globally for inline onclick attributes
+window.openActionModal = openActionModal;
+window.closeActionModal = closeActionModal;
+window.confirmAction = confirmAction;
+</script>
+  
+</body>
+</html>
