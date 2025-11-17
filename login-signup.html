@@ -603,11 +603,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const { error } = await supa.auth.signInWithPassword({ email, password });
     btnBusy(btn, false);
 
-    if (error) {
-      const msg = (error.message || "").toLowerCase();
-      if (msg.includes("confirm")) return showNotice("Please confirm your email first.");
-      return showNotice("Invalid email or password.");
-    }
+    
 
     window.location.href = "student.html";
   } catch (err) {
