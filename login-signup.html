@@ -448,11 +448,26 @@ const modal = document.getElementById("noticeModal");
 const modalMsg = document.getElementById("modalMessage");
 const modalClose = document.getElementById("modalClose");
 
-function showNotice(msg) {
+function showNotice(msg, onClose) {
   modalMsg.textContent = msg;
   modal.classList.remove("hidden");
+
+  const handler = () => {
+    modal.classList.add("hidden");
+    modalClose.removeEventListener("click", handler);
+
+    if (typeof onClose === "function") {
+      onClose();
+    } else if (msg && msg.includes("Sign-up successful")) {
+      const signupForm = document.getElementById("signup-form");
+      if (signupForm) {
+        signupForm.reset();
+      }
+    }
+  };
+
+  modalClose.addEventListener("click", handler);
 }
-modalClose.addEventListener("click", () => modal.classList.add("hidden"));
 
 // --- Button busy helper ---
 const btnBusy = (btn, busy) => { btn.disabled = busy; btn.style.filter = busy ? 'grayscale(0.3)' : ''; };
@@ -558,7 +573,7 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
     }
 
     btnBusy(btn, false);
-    showNotice("✅ Sign-up successful! Please check your email to confirm your account.");
+    showNotice("✅ Sign-up successful!");
   } catch (err) {
     console.error('Sign-up error:', err);
     showNotice(err.message || "An error occurred while signing up.");
