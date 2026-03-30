@@ -254,6 +254,20 @@
               </div>
             </div>
 
+
+            <label>Student Photo</label>
+<input id="signup-photo" type="file" accept="image/*" required>
+<img id="previewImg" src="" alt="Photo Preview" style="margin-top:8px; max-width:120px; border-radius:10px; cursor:pointer; display:none; border:2px solid var(--gold-1);">
+
+
+<div id="photoPreview" style="margin-bottom:8px; text-align:center;">
+  <img id="previewImg" src="" alt="Photo Preview" style="display:none; width:120px; height:120px; object-fit:cover; border-radius:12px; border:1px solid #ccc;">
+</div>
+
+
+
+
+
             <!-- Campus Dropdown -->
             <label for="signup-campus">Campus</label>
             <select id="signup-campus" required>
@@ -300,7 +314,7 @@
     });
 
     // Campus → College → Course Data
-    const campusData = {
+    let campusData = {
       "PRMSU Iba": {
         "College of Business, Accountancy and Public Administration (CBAPA)": [
           "Bachelor of Science in Accountancy",
@@ -419,6 +433,125 @@
         });
       }
     });
+
+    function normalizeCampusToken(value) {
+      return String(value || "")
+        .toLowerCase()
+        .replace(/^prmsu\s*/i, "")
+        .replace(/\./g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function normalizeCampusLabel(value) {
+      const token = normalizeCampusToken(value);
+      const map = {
+        "iba": "PRMSU Iba",
+        "castillejos": "PRMSU Castillejos",
+        "caste": "PRMSU Castillejos",
+        "san marcelino": "PRMSU San Marcelino",
+        "botolan": "PRMSU Botolan",
+        "candelaria": "PRMSU Candelaria",
+        "masinloc": "PRMSU Masinloc",
+        "sta cruz": "PRMSU Sta. Cruz",
+        "stacruz": "PRMSU Sta. Cruz"
+      };
+      return map[token] || String(value || "").trim();
+    }
+
+    function mergeCampusProgramData(baseData, incomingData) {
+      const merged = {};
+      const addRow = (campus, department, course) => {
+        const c = String(campus || "").trim();
+        const d = String(department || "").trim();
+        const r = String(course || "").trim();
+        if (!c || !d || !r) return;
+        if (!merged[c]) merged[c] = {};
+        if (!merged[c][d]) merged[c][d] = [];
+        if (!merged[c][d].includes(r)) merged[c][d].push(r);
+      };
+
+      Object.entries(baseData || {}).forEach(([campus, departments]) => {
+        Object.entries(departments || {}).forEach(([department, courses]) => {
+          (courses || []).forEach((course) => addRow(campus, department, course));
+        });
+      });
+
+      Object.entries(incomingData || {}).forEach(([campus, departments]) => {
+        Object.entries(departments || {}).forEach(([department, courses]) => {
+          (courses || []).forEach((course) => addRow(campus, department, course));
+        });
+      });
+
+      return merged;
+    }
+
+    function isDepartmentOnlyToken(courseValue) {
+      return String(courseValue || "").trim().toLowerCase() === "__department_only__";
+    }
+
+    window.__loadManagedProgramsForSignup = async function __loadManagedProgramsForSignup(supaClient) {
+      const PROGRAMS_TABLE_CANDIDATES = ["campus_programs", "programs", "courses"];
+      const isMissingTableError = (err) => {
+        const code = String(err?.code || "").trim().toUpperCase();
+        const msg = String(err?.message || "").toLowerCase();
+        return (
+          code === "42P01" ||
+          code === "PGRST205" ||
+          msg.includes("could not find the table") ||
+          msg.includes("does not exist")
+        );
+      };
+
+      let programsTable = null;
+      for (const candidate of PROGRAMS_TABLE_CANDIDATES) {
+        const probe = await supaClient.from(candidate).select("*").limit(1);
+        if (!probe.error) {
+          programsTable = candidate;
+          break;
+        }
+        if (!isMissingTableError(probe.error)) {
+          programsTable = candidate;
+          break;
+        }
+      }
+      if (!programsTable) return;
+
+      let rows = null;
+
+      try {
+        const { data, error } = await supaClient
+          .from(programsTable)
+          .select("*");
+        if (error) {
+          throw error;
+        } else {
+          rows = data || [];
+        }
+      } catch (err) {
+        console.warn("Signup programs fetch error:", err);
+        return;
+      }
+
+      const next = {};
+      (rows || []).forEach((row) => {
+        const campus = normalizeCampusLabel(row?.campus || "");
+        const department = String(row?.department ?? row?.college ?? "").trim();
+        const course = String(row?.course_name ?? row?.course ?? row?.name ?? "").trim();
+        if (isDepartmentOnlyToken(course)) return;
+        if (!campus || !department || !course) return;
+        if (!next[campus]) next[campus] = {};
+        if (!next[campus][department]) next[campus][department] = [];
+        if (!next[campus][department].includes(course)) {
+          next[campus][department].push(course);
+        }
+      });
+
+      if (!Object.keys(next).length) return;
+      campusData = mergeCampusProgramData(campusData, next);
+      campusSelect.dispatchEvent(new Event("change"));
+      collegeSelect.dispatchEvent(new Event("change"));
+    };
   </script>
 
 
@@ -442,6 +575,11 @@ const { createClient } = window.supabase;
 const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcm5xa29venNsb2VxenhwZ2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1ODQ5MjgsImV4cCI6MjA3NTE2MDkyOH0.E4Lp4LtyvRfFoImUkZMFyVBM7sro4aoNlQEa7sUIsIs";
 const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+if (typeof window.__loadManagedProgramsForSignup === "function") {
+  window.__loadManagedProgramsForSignup(supa).catch((err) => {
+    console.warn("Managed programs bootstrap failed:", err);
+  });
+}
 
 // --- Modal notice ---
 const modal = document.getElementById("noticeModal");
@@ -493,6 +631,71 @@ document.getElementById('toLogin').addEventListener('click', () => {
 });
 
 // --- SIGN UP ---
+document.addEventListener('DOMContentLoaded', () => {
+  const photoInput = document.getElementById('signup-photo');
+  const photoPreview = document.getElementById('signup-photo-preview');
+
+  if(photoInput && photoPreview){
+    photoInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          photoPreview.src = reader.result;
+          photoPreview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    photoPreview.addEventListener('click', () => {
+      if(photoPreview.src) window.open(photoPreview.src, '_blank');
+    });
+  }
+});
+
+function parseBirthdateValue(rawValue) {
+  const raw = String(rawValue || "").trim();
+  if (!raw) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const [y, m, d] = raw.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    return (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) ? dt : null;
+  }
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+    const [m, d, y] = raw.split("/").map(Number);
+    const dt = new Date(y, m - 1, d);
+    return (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) ? dt : null;
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+}
+
+function calculateAgeFromBirthdate(birthDate, today = new Date()) {
+  const now = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  let age = now.getFullYear() - birthDate.getFullYear();
+  const monthDiff = now.getMonth() - birthDate.getMonth();
+  const dayDiff = now.getDate() - birthDate.getDate();
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) age -= 1;
+  return age;
+}
+
+const signupBirthdateInput = document.getElementById("signup-birthdate");
+const signupAgeInput = document.getElementById("signup-age");
+if (signupBirthdateInput && signupAgeInput) {
+  signupBirthdateInput.addEventListener("change", () => {
+    const parsedBirthdate = parseBirthdateValue(signupBirthdateInput.value);
+    if (!parsedBirthdate) return;
+    const computedAge = calculateAgeFromBirthdate(parsedBirthdate);
+    if (computedAge >= 0) signupAgeInput.value = String(computedAge);
+  });
+}
+
+
 document.getElementById('signup-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = e.submitter;
@@ -509,6 +712,42 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
   const college = document.getElementById('signup-college').value.trim();
   const course = document.getElementById('signup-course').value.trim();
 
+  const photoFile = document.getElementById("signup-photo").files[0];
+
+if (!photoFile) {
+  showNotice("Please upload a student photo.");
+  btnBusy(btn, false);
+  return;
+}
+
+  const parsedBirthdate = parseBirthdateValue(birthdate);
+  if (!parsedBirthdate) {
+    showNotice("Please enter a valid birthdate.");
+    btnBusy(btn, false);
+    return;
+  }
+
+  const today = new Date();
+  if (parsedBirthdate > today) {
+    showNotice("Birthdate cannot be in the future.");
+    btnBusy(btn, false);
+    return;
+  }
+
+  const enteredAge = Number(age);
+  if (!Number.isInteger(enteredAge) || enteredAge <= 0) {
+    showNotice("Please enter a valid age.");
+    btnBusy(btn, false);
+    return;
+  }
+
+  const computedAge = calculateAgeFromBirthdate(parsedBirthdate, today);
+  if (enteredAge !== computedAge) {
+    showNotice(`Age does not match birthdate. Expected age is ${computedAge}.`);
+    btnBusy(btn, false);
+    return;
+  }
+
   // ✅ Validate student number format: XX-X-X-XXXX
   const studentNumberPattern = /^\d{2}-\d-\d-\d{4}$/;
   if (!studentNumberPattern.test(studentNumber)) {
@@ -516,6 +755,8 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
     btnBusy(btn, false);
     return;
   }
+  
+  
 
   try {
     // 1️⃣ Create Supabase Auth Account
@@ -539,38 +780,41 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
     });
     if (authError) throw authError;
 
+    const fileExt = photoFile.name.split('.').pop();
+const photoPath = `students/${studentNumber}_${Date.now()}.${fileExt}`;
+
+const { error: uploadError } = await supa.storage
+  .from("student_profile")
+  .upload(photoPath, photoFile);
+
+if (uploadError) {
+  showNotice("Photo upload failed: " + uploadError.message);
+  btnBusy(btn, false);
+  return;
+}
+
+
     // 2️⃣ Insert into applicants_main
-    const applicantData = {
-      full_name: fullname,
-      email,
-      password,
-      birthdate,
-      age,
-      student_number: studentNumber,
-      phone_number: phone,
-      campus,
-      college,
-      course,
-      created_at: new Date().toISOString()
+   const applicantData = {
+  full_name: fullname,
+  email,
+  password,
+  birthdate,
+  age,
+  student_number: studentNumber,
+  phone_number: phone,
+  campus,
+  college,
+  course,
+  photo_path: photoPath,  // <--- ADD THIS LINE
+  created_at: new Date().toISOString()
+
     };
     const { error: mainError } = await supa.from('applicants_main').insert([applicantData]);
     if (mainError) throw mainError;
 
     // 3️⃣ Insert into campus-specific table
-    const campusTable = {
-      "PRMSU Iba": "applicants_iba",
-      "PRMSU Castillejos": "applicants_castillejos",
-      "PRMSU San Marcelino": "applicants_sanmarcelino",
-      "PRMSU Botolan": "applicants_botolan",
-      "PRMSU Candelaria": "applicants_candelaria",
-      "PRMSU Masinloc": "applicants_masinloc",
-      "PRMSU Sta. Cruz": "applicants_stacruz"
-    }[campus];
-
-    if (campusTable) {
-      const { error: campusError } = await supa.from(campusTable).insert([applicantData]);
-      if (campusError) console.warn('Campus insert error:', campusError.message);
-    }
+    
 
     btnBusy(btn, false);
     showNotice("✅ Sign-up successful!");
@@ -620,6 +864,22 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
     
 
+    try {
+      const { data: { user } } = await supa.auth.getUser();
+      const meta = user?.user_metadata || {};
+      localStorage.setItem('applicantProfileCache', JSON.stringify({
+        full_name: meta.full_name || '',
+        email: user?.email || email,
+        phone_number: meta.phone_number || '',
+        birthdate: meta.birthdate || '',
+        campus: meta.campus || '',
+        college: meta.college || '',
+        course: meta.course || ''
+      }));
+    } catch (_) {
+      // ignore cache issues
+    }
+
     window.location.href = "student.html";
   } catch (err) {
     console.error(err);
@@ -628,5 +888,6 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   }
 });
   </script>
+  <script src="shared/autocomplete-off.js" defer></script>
 </body>
 </html>

@@ -5,34 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Application Tracker - EaseKolar</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script>
+    (function () {
+      const saved = localStorage.getItem('theme');
+      const isDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    })();
+  </script>
 
   <style>
+    :root {
+      --page-bg: transparent;
+      --text: #0f274b;
+      --muted: #5f6f8a;
+      --card-bg: #ffffff;
+      --card-shadow: 0 10px 28px rgba(24,37,56,.12);
+      --th-bg: #edf3fb;
+      --th-text: #244372;
+      --table-text: #1d2a44;
+      --row-even: #f8fbff;
+      --row-hover: #ebf3ff;
+      --row-line: #d8e5f8;
+      --filter-all-bg: #64748b;
+    }
+
+    html[data-theme="dark"] {
+      --page-bg: transparent;
+      --text: #ffffff;
+      --muted: #9ca3af;
+      --card-bg: #111c44;
+      --card-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      --th-bg: #1a2758;
+      --th-text: #c9d1f2;
+      --table-text: #e0e6f0;
+      --row-even: #13204a;
+      --row-hover: #1e2d6d;
+      --row-line: #273362;
+      --filter-all-bg: #475569;
+    }
+
     body {
       font-family: "Poppins", sans-serif;
-      background-color: #0c1635;
-      color: #fff;
+      background-color: var(--page-bg);
+      color: var(--text);
       margin: 0;
       padding: 40px;
+      transition: background-color .2s ease, color .2s ease;
     }
 
     .card {
-      background-color: #111c44;
+      background-color: var(--card-bg);
       border-radius: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      box-shadow: var(--card-shadow);
       padding: 30px;
       max-width: 1100px;
       margin: 0 auto;
+      transition: background-color .2s ease, box-shadow .2s ease;
     }
 
     h1 {
       font-size: 22px;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--text);
       margin-bottom: 8px;
     }
 
     p {
-      color: #9ca3af;
+      color: var(--muted);
       font-size: 14px;
       margin-bottom: 20px;
     }
@@ -41,29 +80,31 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
-      color: #e0e6f0;
+      color: var(--table-text);
       border-radius: 12px;
       overflow: hidden;
+      transition: color .2s ease;
     }
 
     th, td {
       padding: 12px 10px;
       text-align: center;
-      border-bottom: 1px solid #273362;
+      border-bottom: 1px solid var(--row-line);
     }
 
     th {
-      background-color: #1a2758;
-      color: #c9d1f2;
+      background-color: var(--th-bg);
+      color: var(--th-text);
       font-weight: 600;
+      transition: background-color .2s ease, color .2s ease;
     }
 
     tr:nth-child(even) {
-      background-color: #13204a;
+      background-color: var(--row-even);
     }
 
     tr:hover {
-      background-color: #1e2d6d;
+      background-color: var(--row-hover);
       transition: 0.3s;
     }
 
@@ -98,7 +139,7 @@
       margin-right: 5px;
     }
 
-    .all { background: #475569; color: white; }
+    .all { background: var(--filter-all-bg); color: white; }
     .approved-btn { background: #16a34a; color: white; }
     .rejected-btn { background: #dc2626; color: white; }
     .pending-btn { background: #d97706; color: white; }
@@ -131,6 +172,40 @@
     </table>
   </div>
 
+<script>
+  (function installPromptAlerts() {
+    if (window.__easePromptInstalled) return;
+    window.__easePromptInstalled = true;
+    const style = document.createElement('style');
+    style.textContent = `
+      .ease-prompt-host{position:fixed;top:18px;right:18px;z-index:99999;display:grid;gap:10px;pointer-events:none}
+      .ease-prompt{min-width:280px;max-width:min(440px,calc(100vw - 36px));padding:12px 14px;border-radius:12px;border:1px solid var(--row-line,#dbe7fb);background:var(--card-bg,#fff);color:var(--text,#0f274b);box-shadow:0 12px 28px rgba(15,39,75,.14);display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start;animation:easePromptIn .2s ease}
+      .ease-prompt i{margin-top:2px;font-size:14px;color:#1d4ed8}
+      .ease-prompt .msg{font-size:13px;line-height:1.45;word-break:break-word}
+      @keyframes easePromptIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+    `;
+    document.head.appendChild(style);
+    const host = document.createElement('div');
+    host.className = 'ease-prompt-host';
+    host.setAttribute('aria-live', 'polite');
+    host.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(host);
+    window.alert = function alertPrompt(message) {
+      const item = document.createElement('div');
+      item.className = 'ease-prompt';
+      item.innerHTML = '<i class="fa-solid fa-circle-info" aria-hidden="true"></i><div class="msg"></div>';
+      item.querySelector('.msg').textContent = String(message || '').trim();
+      host.appendChild(item);
+      setTimeout(() => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(-4px)';
+        item.style.transition = 'opacity .18s ease, transform .18s ease';
+        setTimeout(() => item.remove(), 180);
+      }, 3200);
+    };
+  })();
+</script>
+
 <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
     const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
@@ -139,6 +214,19 @@
 
 let applicantData = [];
 let activeFilter = "All";
+
+function applyTheme(theme) {
+  const resolved = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', resolved);
+  document.body.classList.toggle('theme-light', resolved === 'light');
+}
+
+window.addEventListener('message', (event) => {
+  if (event.origin !== window.location.origin) return;
+  const payload = event.data || {};
+  if (payload.type !== 'easekolar-theme') return;
+  applyTheme(payload.theme);
+});
 
 async function fetchApplications() {
   const { data: userData } = await supabase.auth.getUser();
@@ -197,8 +285,12 @@ function setFilter(filter) {
 }
 
 window.setFilter = setFilter;
-window.onload = fetchApplications;
+window.onload = () => {
+  applyTheme(localStorage.getItem('theme'));
+  fetchApplications();
+};
 </script>
 
+  <script src="shared/autocomplete-off.js" defer></script>
 </body>
 </html>

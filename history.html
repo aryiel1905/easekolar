@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Application History - EaseKolar</title>
+    <script>
+      (function () {
+        const saved = localStorage.getItem('theme');
+        const isDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      })();
+    </script>
 
     <!-- Fonts -->
     <link
@@ -35,6 +42,30 @@
         --row-odd: #f9fbff;
         --row-hover: #f3f6fe;
         --table-head: #f3f6fe;
+        --thead-text: #64748b;
+        --btn-base: #475569;
+        --btn-base-hover: #334155;
+      }
+      [data-theme='dark'] {
+        --bg: #0a142b;
+        --panel: #0f1c3c;
+        --muted: #9fb3d6;
+        --border: #1c2c56;
+        --text: #e7eeff;
+        --sidebar: #0c1836;
+        --sidebar-border: #1c2c56;
+        --sidebar-hover: #172b59;
+        --sidebar-active: #203055;
+        --content-grad1: #0b1836;
+        --content-grad2: #0a1530;
+
+        --card: #0f1c3c;
+        --row-odd: #13254a;
+        --row-hover: #1a2f58;
+        --table-head: #14284d;
+        --thead-text: #b8c8e6;
+        --btn-base: #2a3f66;
+        --btn-base-hover: #365386;
       }
 
       * {
@@ -49,20 +80,19 @@
         color: var(--text);
         font-family: "Poppins", ui-sans-serif, system-ui, -apple-system,
           Segoe UI, Roboto, "Helvetica Neue", Arial;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
+        display: block;
+        padding: 0;
         margin: 0;
       }
-      .container {
+      .admin-shell {
         display: flex;
-        width: 96%;
-        height: 92vh;
+        width: 100%;
+        height: 100svh;
+        min-height: 100vh;
         background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 24px;
-        box-shadow: 0 2px 5px rgba(15, 23, 42, 0.25);
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
         overflow: hidden;
       }
       .sidebar {
@@ -151,14 +181,16 @@
           var(--content-grad1),
           var(--content-grad2)
         );
-        padding: 28px 32px 32px;
+        width: 100%;
+        padding: 28px 12px 32px 32px;
         overflow: auto;
       }
       /* Uniform main content width across tabs */
       .content > * {
-        max-width: 1120px;
-        margin-left: auto;
-        margin-right: auto;
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
       }
 
       /* History card */
@@ -168,9 +200,11 @@
         border-radius: 20px;
         border: 1px solid var(--border);
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
-        padding: 30px;
-        max-width: 1200px;
-        margin: 0 auto;
+        padding: 30px 12px 30px 24px;
+        max-width: 100%;
+        margin: 0;
+        transform: none;
+        width: 100%;
       }
 
       h1 {
@@ -203,6 +237,25 @@
         align-items: center;
         flex-wrap: wrap;
       }
+      .filter-toolbar {
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+      }
+      #statusFilter {
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--panel);
+        color: var(--text);
+        font-size: 14px;
+      }
+      [data-theme='dark'] #statusFilter option {
+        background: #0f1c3c;
+        color: #e7eeff;
+      }
 
       .filter-btn,
       .action-btn {
@@ -211,8 +264,12 @@
         cursor: pointer;
         border: none;
         font-weight: 600;
-        background: #475569;
+        background: var(--btn-base);
         color: white;
+      }
+      .filter-btn:hover,
+      .action-btn:hover {
+        background: var(--btn-base-hover);
       }
 
       .approved-btn {
@@ -232,7 +289,8 @@
 
       /* Table: fixed layout to avoid merged columns */
       .table-wrap {
-        overflow: auto;
+        overflow-x: hidden;
+        overflow-y: auto;
         border-radius: 12px;
         background: transparent;
       }
@@ -242,13 +300,13 @@
         border-collapse: collapse;
         font-size: 14px;
         color: var(--text);
-        table-layout: fixed; /* key to avoid column collapse */
-        min-width: 1000px; /* allow horizontal scroll on small screens */
+        table-layout: auto;
+        min-width: 0;
       }
 
       th,
       td {
-        padding: 12px 10px;
+        padding: 11px 8px;
         text-align: left; /* left align content for readability */
         border-bottom: 1px solid var(--border);
         vertical-align: middle;
@@ -258,7 +316,7 @@
 
       th {
         background-color: var(--table-head);
-        color: #64748b; /* readable header text */
+        color: var(--thead-text); /* readable header text */
         font-weight: 700;
       }
 
@@ -269,28 +327,28 @@
 
       /* sensible column widths — adjust as needed */
       colgroup col:nth-child(1) {
-        width: 40px;
+        width: 2%;
       } /* # */
       colgroup col:nth-child(2) {
-        width: 200px;
+        width: 10%;
       } /* Name */
       colgroup col:nth-child(3) {
-        width: 220px;
+        width: 19%;
       } /* Program */
       colgroup col:nth-child(4) {
-        width: 140px;
+        width: 7%;
       } /* Campus */
       colgroup col:nth-child(5) {
-        width: 300px;
+        width: 12%;
       } /* Address */
       colgroup col:nth-child(6) {
-        width: 120px;
+        width: 10%;
       } /* Status */
       colgroup col:nth-child(7) {
-        width: 160px;
+        width: 8%;
       } /* Decided At */
       colgroup col:nth-child(8) {
-        width: 160px;
+        width: 8%;
       } /* Decided By */
 
       tr:nth-child(even) {
@@ -541,7 +599,7 @@
     </style>
   </head>
   <body>
-    <div class="container">
+    <div class="admin-shell">
       <!-- Sidebar -->
       <!-- Sidebar (shared) -->
       <div id="sidebar-root"></div>
@@ -578,21 +636,14 @@
             </button>
           </div>
 
-          <!-- Filter Buttons -->
-          <div class="filter-row">
-            <button onclick="setFilter('All')" class="filter-btn">All</button>
-            <button
-              onclick="setFilter('Approved')"
-              class="filter-btn approved-btn"
-            >
-              Approved
-            </button>
-            <button
-              onclick="setFilter('Rejected')"
-              class="filter-btn rejected-btn"
-            >
-              Rejected
-            </button>
+          <!-- Filter (dashboard-style) -->
+          <div class="filter-toolbar">
+            <label for="statusFilter" style="font-size: 13px">Filter:</label>
+            <select id="statusFilter">
+              <option value="All" selected>All (Approved + Rejected)</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
           </div>
 
           <div class="table-wrap">
@@ -800,12 +851,14 @@
       // expose renderHistory in case other scripts call it
       window.renderHistory = renderHistory;
 
-      function setFilter(filter) {
-        activeFilter = filter;
-        renderHistory();
+      const statusFilterEl = document.getElementById("statusFilter");
+      if (statusFilterEl) {
+        statusFilterEl.value = activeFilter;
+        statusFilterEl.addEventListener("change", (e) => {
+          activeFilter = e.target.value || "All";
+          renderHistory();
+        });
       }
-
-      window.setFilter = setFilter;
       function toggleLoadMore() {
         const el = document.getElementById("loadMoreBtn");
         if (el) el.style.display = hasMore ? "inline-flex" : "none";
@@ -1033,5 +1086,39 @@
         fetchHistory(true);
       };
     </script>
-  </body>
+    <script>
+      (function installPromptAlerts() {
+        if (window.__easePromptInstalled) return;
+        window.__easePromptInstalled = true;
+        const style = document.createElement("style");
+        style.textContent = `
+          .ease-prompt-host{position:fixed;top:18px;right:18px;z-index:99999;display:grid;gap:10px;pointer-events:none}
+          .ease-prompt{min-width:280px;max-width:min(440px,calc(100vw - 36px));padding:12px 14px;border-radius:12px;border:1px solid #dbe7fb;background:#ffffff;color:#0f274b;box-shadow:0 12px 28px rgba(15,39,75,.14);display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start;animation:easePromptIn .2s ease}
+          .ease-prompt i{margin-top:2px;font-size:14px;color:#1d4ed8}
+          .ease-prompt .msg{font-size:13px;line-height:1.45;word-break:break-word}
+          @keyframes easePromptIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+        `;
+        document.head.appendChild(style);
+        const host = document.createElement("div");
+        host.className = "ease-prompt-host";
+        host.setAttribute("aria-live", "polite");
+        host.setAttribute("aria-atomic", "true");
+        document.body.appendChild(host);
+        window.alert = function alertPrompt(message) {
+          const item = document.createElement("div");
+          item.className = "ease-prompt";
+          item.innerHTML = '<i class="fa-solid fa-circle-info" aria-hidden="true"></i><div class="msg"></div>';
+          item.querySelector(".msg").textContent = String(message || "").trim();
+          host.appendChild(item);
+          setTimeout(() => {
+            item.style.opacity = "0";
+            item.style.transform = "translateY(-4px)";
+            item.style.transition = "opacity .18s ease, transform .18s ease";
+            setTimeout(() => item.remove(), 180);
+          }, 3200);
+        };
+      })();
+    </script>
+    <script src="shared/autocomplete-off.js" defer></script>
+</body>
 </html>

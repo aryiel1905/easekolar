@@ -4,16 +4,47 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Scholarship Management - Admin</title>
+  <script>
+    (function () {
+      const saved = localStorage.getItem('theme');
+      const isDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    })();
+  </script>
   <style>
     :root{
       --bg: #eef3fb; --panel: #ffffff; --muted: #eaf1ff; --border: #e6eaf2; --text: #0f172a;
       --sidebar: #fbfdff; --sidebar-border: #e6eaf2; --sidebar-hover: #f0f4ff; --sidebar-active: #e7efff;
       --content-grad1: #fbfdff; --content-grad2: #f1f5fe;
+      --card: #ffffff; --line: #dee6f3; --primary:#1c3d77; --primary-100:#eaf1ff;
+      --input-bg:#f8fafe; --input-text:#0f172a; --input-placeholder:#64748b;
+      --chip-bg:#eef2ff; --chip-border:#d8e2ff; --chip-text:#30406a;
+      --muted-text:#475569;
+      --sch-card-bg1:#ffffff;
+      --sch-card-bg2:#f7faff;
+      --sch-card-shadow:0 10px 24px rgba(15,23,42,.08);
+      --sch-card-shadow-hover:0 16px 34px rgba(15,23,42,.14);
+      --sch-card-accent:rgba(42,99,235,.22);
     }
+    [data-theme='dark']{
+      --bg:#0a142b; --panel:#0f1c3c; --muted:#14284d; --border:#1c2c56; --text:#e7eeff;
+      --sidebar:#0c1836; --sidebar-border:#1c2c56; --sidebar-hover:#172b59; --sidebar-active:#203055;
+      --content-grad1:#0b1836; --content-grad2:#0a1530;
+      --card:#0f1c3c; --line:#1c2c56; --primary:#9db7ff; --primary-100:#172b59;
+      --input-bg:#0d1731; --input-text:#e7eeff; --input-placeholder:#8da1c6;
+      --chip-bg:#18284b; --chip-border:#2a3f6b; --chip-text:#c7d7ff;
+      --muted-text:#a7b8d8;
+      --sch-card-bg1:#12244a;
+      --sch-card-bg2:#0f1c3c;
+      --sch-card-shadow:0 12px 28px rgba(2,6,23,.45);
+      --sch-card-shadow-hover:0 20px 40px rgba(2,6,23,.58);
+      --sch-card-accent:rgba(157,183,255,.34);
+    }
+    
     *{ box-sizing: border-box; }
     html, body { height: 100%; }
-    body{ background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; display:flex; align-items:center; justify-content:center; padding:16px; margin:0; }
-    .container{ display:flex; width:96%; height:92vh; background:var(--panel); border:1px solid var(--border); border-radius:24px; box-shadow:0 10px 30px rgba(15,23,42,.05); overflow:hidden; }
+    body{ background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; margin:0; padding:0; display:block; }
+    .admin-shell{ display:flex; width:100%; height:100svh; min-height:100vh; background:var(--panel); border:0; border-radius:0; box-shadow:none; overflow:hidden; }
     .sidebar{ width:280px; background:var(--sidebar); border-right:1px solid var(--sidebar-border); padding:24px 20px; display:flex; flex-direction:column; gap:16px; }
     .brand{ font-weight:800; font-size:1.1rem; margin-bottom:6px; color:var(--text); }
     .menu{ display:flex; flex-direction:column; gap:6px; }
@@ -27,64 +58,387 @@
     .avatar{ width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background: var(--sidebar-hover); }
     .profile-name{ font-weight:800; }
     .profile-role{ font-size:12px; color:#6b7280; }
-    .content{ flex:1; background: linear-gradient(180deg,var(--content-grad1),var(--content-grad2)); padding:28px 32px 32px; overflow:auto; }
+    .content{ flex:1; width:100%; background: linear-gradient(180deg,var(--content-grad1),var(--content-grad2)); padding:28px 24px 32px 32px; overflow:auto; }
     /* Uniform main content width across tabs */
-    .content > *{ max-width: 1120px; margin-left:auto; margin-right:auto; }
+    .content > *{ width:100%; max-width:100%; margin-left:0; margin-right:0; }
     .card{ background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:18px; box-shadow:0 6px 16px rgba(15,23,42,.04); }
     .hstack{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
     .btn{ border:none; cursor:pointer; border-radius:12px; padding:10px 14px; font-weight:700; }
     .btn-primary{ background:#1d4ed8; color:#fff; }
+    .btn-primary:hover{ background:#1e40af; }
     .btn-secondary{ background:#eaeef8; }
     label{ font-size:13px; font-weight:600; display:block; margin:8px 0 6px; }
-    input, textarea{ width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px; font-size:14px; }
+    input, textarea, select{
+      width:100%;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      font-size:14px;
+      background:var(--input-bg);
+      color:var(--input-text);
+    }
+    input::placeholder, textarea::placeholder{ color:var(--input-placeholder); }
+    input:focus, textarea:focus{
+      outline:none;
+      border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent);
+    }
     textarea{ resize:vertical; min-height:80px; }
     .requirements-list{ display:flex; flex-wrap:wrap; gap:8px; padding:0; margin:8px 0 0; list-style:none; }
-    .requirements-list li{ background:#eef2ff; border:1px solid #e1e8ff; padding:6px 10px; border-radius:10px; font-size:12px; }
-    .sch-card{ border:1px solid var(--border); border-radius:16px; padding:16px; background:#fff; }
-    .sch-card h4{ margin:0 0 6px; font-size:16px; font-weight:700; }
-    .muted{ color:#475569; font-size:13px; }
+    .requirements-list li{
+      background:var(--chip-bg);
+      border:1px solid var(--chip-border);
+      color:var(--chip-text);
+      padding:6px 10px;
+      border-radius:10px;
+      font-size:12px;
+    }
+    .sch-card{
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+      background: linear-gradient(160deg, var(--sch-card-bg1), var(--sch-card-bg2));
+      box-shadow: var(--sch-card-shadow);
+      position: relative;
+      overflow: hidden;
+      transition: transform .16s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .sch-card::before{
+      content:"";
+      position:absolute;
+      inset:0 auto 0 0;
+      width:4px;
+      background: linear-gradient(180deg, var(--sch-card-accent), transparent 70%);
+      pointer-events:none;
+    }
+    .sch-card:hover{
+      transform: translateY(-2px);
+      box-shadow: var(--sch-card-shadow-hover);
+      border-color: color-mix(in oklab, var(--primary) 34%, var(--border));
+    }
+    .sch-card h4{
+      margin:0 0 6px;
+      font-size:16px;
+      font-weight:700;
+      color:var(--text);
+    }
+    .muted{ color:var(--muted-text); font-size:13px; }
+    .tab-row{
+      display:flex;
+      gap:10px;
+      margin:0 0 16px;
+      flex-wrap:wrap;
+    }
+    .tab-btn{
+      border:1px solid var(--border);
+      background:var(--panel);
+      color:var(--text);
+      border-radius:999px;
+      padding:8px 14px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .tab-btn.active{
+      background:var(--primary);
+      color:#fff;
+      border-color: color-mix(in oklab, var(--primary) 80%, black 0%);
+    }
+    .pane{ display:none; }
+    .pane.active{ display:block; }
+    .program-toolbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:12px;
+      flex-wrap:wrap;
+    }
+    .program-campus-badge{
+      font-size:12px;
+      border:1px solid var(--border);
+      background:var(--input-bg);
+      border-radius:999px;
+      padding:4px 10px;
+    }
+    .program-group{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      background:var(--panel);
+    }
+    .program-group h4{
+      margin:0 0 8px;
+      font-size:15px;
+      font-weight:800;
+    }
+    .program-item{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      padding:10px 0;
+      border-top:1px solid var(--border);
+    }
+    .program-item:first-of-type{ border-top:none; }
+    .program-item .meta{ min-width:0; }
+    .program-item .meta strong{ display:block; }
+    .program-item .meta small{
+      display:block;
+      color:var(--muted-text);
+      margin-top:2px;
+      word-break:break-word;
+    }
+    .program-actions{
+      display:flex;
+      gap:8px;
+      flex-shrink:0;
+    }
+    .dept-actions{
+      display:flex;
+      gap:8px;
+      margin-bottom:8px;
+      flex-wrap:wrap;
+    }
+    .dept-actions-compact{
+      margin:8px 0 10px;
+    }
+    .dept-actions-compact label{
+      margin:0 0 6px;
+      display:block;
+      font-size:12px;
+      font-weight:700;
+    }
+    .target-switch{
+      display:flex;
+      gap:6px;
+      margin-bottom:8px;
+    }
+    .target-btn{
+      border:1px solid var(--border);
+      background:var(--input-bg);
+      color:var(--text);
+      border-radius:999px;
+      padding:5px 10px;
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .target-btn.active{
+      background:var(--primary);
+      color:#fff;
+      border-color: color-mix(in oklab, var(--primary) 80%, black 0%);
+    }
+    .dept-course-select-wrap{
+      margin:8px 0 10px;
+    }
+    .program-selected-meta{
+      color:var(--muted-text);
+      font-size:13px;
+      margin-bottom:10px;
+      word-break:break-word;
+    }
+    .btn-danger{
+      background:#ef4444;
+      color:#fff;
+    }
+    .btn-danger:hover{ background:#b91c1c; }
+    .edit-badge{
+      display:none;
+      margin:8px 0 10px;
+      font-size:12px;
+      font-weight:700;
+      color:var(--primary);
+      background:color-mix(in oklab, var(--primary-100, #eaf1ff) 70%, white 0%);
+      border:1px solid color-mix(in oklab, var(--primary) 20%, var(--border));
+      border-radius:999px;
+      padding:6px 10px;
+      width:max-content;
+      max-width:100%;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="admin-shell">
     <div id="sidebar-root"></div>
     <main class="content">
       <div class="hstack" style="margin-bottom:10px;">
-        <h1 style="margin:0; font-size:24px; font-weight:800;">Scholarship Management</h1>
+        <h1 style="margin:0; font-size:24px; font-weight:800;">Scholarships</h1>
+      </div>
+      <div class="tab-row">
+        <button id="tabScholarships" class="tab-btn active" type="button">Scholarships</button>
+        <button id="tabPrograms" class="tab-btn" type="button">Programs</button>
       </div>
 
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="margin:0 0 8px;">Add Scholarship</h3>
-        <form id="scholarshipForm">
-          <label for="schName">Scholarship Name</label>
-          <input type="text" id="schName" required />
+      <section id="scholarshipsPane" class="pane active">
+        <div class="card" style="margin-bottom:16px;">
+          <h3 style="margin:0 0 8px;">Add Scholarship</h3>
+          <div id="scholarshipEditingBadge" class="edit-badge"></div>
+          <form id="scholarshipForm" autocomplete="off">
+            <label for="schName">Scholarship Name</label>
+            <input type="text" id="schName" required />
 
-          <label for="schGrade">Grade Requirements</label>
-          <input type="text" id="schGrade" required />
+            <label for="schGrade">Grade Requirements</label>
+            <input type="text" id="schGrade" required />
 
-          <label for="schAmount">Amount</label>
-          <input type="text" id="schAmount" required />
+            <label for="schAmount">Amount</label>
+            <input type="text" id="schAmount" required />
 
-          <label for="schRequirement">Required Documents (press Enter to add)</label>
-          <input type="text" id="schRequirement" placeholder="e.g., Report Card" />
-          <ul id="requirementsPreview" class="requirements-list"></ul>
+            <label for="schRequirement">Required Documents (press Enter to add)</label>
+            <input type="text" id="schRequirement" placeholder="e.g., Report Card" />
+            <ul id="requirementsPreview" class="requirements-list"></ul>
 
-          <label for="schDesc">Description</label>
-          <textarea id="schDesc" required></textarea>
+            <label for="schDesc">Description</label>
+            <textarea id="schDesc" required></textarea>
 
           <div style="margin-top:12px;">
-            <button type="submit" class="btn btn-primary">Save Scholarship</button>
+            <button type="submit" id="scholarshipSubmitBtn" class="btn btn-primary">Save Scholarship</button>
+            <button type="button" id="scholarshipCancelEditBtn" class="btn btn-secondary" style="display:none;">Cancel</button>
           </div>
         </form>
       </div>
 
-      <div class="card">
-        <h3 style="margin:0 0 12px;">Scholarships</h3>
-        <div id="scholarshipList" class="grid"></div>
-      </div>
+        <div class="card">
+          <h3 style="margin:0 0 12px;">Scholarships</h3>
+          <div id="scholarshipList" class="grid"></div>
+        </div>
+      </section>
+
+      <section id="programsPane" class="pane">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="program-toolbar">
+            <h3 style="margin:0;">Programs by Department</h3>
+            <span id="programCampusBadge" class="program-campus-badge"></span>
+          </div>
+          <div id="programEditingBadge" class="edit-badge"></div>
+          <form id="programForm" autocomplete="off">
+            <label for="programDepartment">Department</label>
+            <select id="programDepartment" required>
+              <option value="">Select Department</option>
+            </select>
+            <input type="text" id="programDepartmentNew" placeholder="e.g., College of Engineering (COE)" style="display:none; margin-top:8px;" />
+
+            <div id="programCourseGroup">
+              <label for="programCourse">Course</label>
+              <input type="text" id="programCourse" required placeholder="e.g., Bachelor of Science in Civil Engineering" />
+            </div>
+
+            <label for="programDescription">Details (optional)</label>
+            <textarea id="programDescription" placeholder="Optional notes about the course/program"></textarea>
+
+            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+              <button id="programSubmitBtn" type="submit" class="btn btn-primary">Add Course</button>
+              <button id="programAddDepartmentBtn" type="button" class="btn btn-secondary">Add Department</button>
+              <button id="programCancelEdit" type="button" class="btn btn-secondary" style="display:none;">Cancel Edit</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3 style="margin:0 0 12px;">Course List</h3>
+          <div class="dept-actions-compact" style="max-width:320px;">
+            <label>Action Target (All Departments)</label>
+            <div class="target-switch" id="globalTargetSwitch">
+              <button type="button" class="target-btn active" id="globalTargetCourse" data-target="course">Course</button>
+              <button type="button" class="target-btn" id="globalTargetDepartment" data-target="department">Department</button>
+            </div>
+          </div>
+          <div id="programsList" class="grid"></div>
+        </div>
+      </section>
     </main>
   </div>
+
+  <script>
+    (function installPromptAlerts() {
+      if (window.__easePromptInstalled) return;
+      window.__easePromptInstalled = true;
+      const style = document.createElement('style');
+      style.textContent = `
+        .ease-prompt-host{position:fixed;top:18px;right:18px;z-index:99999;display:grid;gap:10px;pointer-events:none}
+        .ease-prompt{min-width:280px;max-width:min(440px,calc(100vw - 36px));padding:12px 14px;border-radius:12px;border:1px solid #dbe7fb;background:#ffffff;color:#0f274b;box-shadow:0 12px 28px rgba(15,39,75,.14);display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start;animation:easePromptIn .2s ease}
+        .ease-prompt i{margin-top:2px;font-size:14px;color:#1d4ed8}
+        .ease-prompt .msg{font-size:13px;line-height:1.45;word-break:break-word}
+        .ease-confirm-backdrop{position:fixed;inset:0;background:rgba(11,18,32,.45);display:none;align-items:center;justify-content:center;z-index:100000;padding:16px}
+        .ease-confirm-backdrop.open{display:flex}
+        .ease-confirm-modal{width:min(520px,calc(100vw - 24px));background:#fff;border:1px solid #dbe7fb;border-radius:14px;box-shadow:0 24px 60px rgba(15,39,75,.22);padding:18px}
+        .ease-confirm-title{margin:0 0 8px;font-size:18px;font-weight:800;color:#0f274b}
+        .ease-confirm-msg{margin:0 0 14px;white-space:pre-wrap;color:#334155;line-height:1.45}
+        .ease-confirm-actions{display:flex;justify-content:flex-end;gap:8px}
+        .ease-confirm-btn{border:1px solid #dbe7fb;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer;background:#fff;color:#0f274b}
+        .ease-confirm-btn.primary{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+        @keyframes easePromptIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+      `;
+      document.head.appendChild(style);
+      const host = document.createElement('div');
+      host.className = 'ease-prompt-host';
+      host.setAttribute('aria-live', 'polite');
+      host.setAttribute('aria-atomic', 'true');
+      document.body.appendChild(host);
+      window.alert = function alertPrompt(message) {
+        const item = document.createElement('div');
+        item.className = 'ease-prompt';
+        item.innerHTML = '<i class="fa-solid fa-circle-info" aria-hidden="true"></i><div class="msg"></div>';
+        item.querySelector('.msg').textContent = String(message || '').trim();
+        host.appendChild(item);
+        setTimeout(() => {
+          item.style.opacity = '0';
+          item.style.transform = 'translateY(-4px)';
+          item.style.transition = 'opacity .18s ease, transform .18s ease';
+          setTimeout(() => item.remove(), 180);
+        }, 3200);
+      };
+
+      const backdrop = document.createElement('div');
+      backdrop.className = 'ease-confirm-backdrop';
+      backdrop.innerHTML = `
+        <div class="ease-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="easeConfirmTitle">
+          <h3 id="easeConfirmTitle" class="ease-confirm-title">Confirm</h3>
+          <p id="easeConfirmMessage" class="ease-confirm-msg"></p>
+          <div class="ease-confirm-actions">
+            <button id="easeConfirmCancel" type="button" class="ease-confirm-btn">Cancel</button>
+            <button id="easeConfirmOk" type="button" class="ease-confirm-btn primary">OK</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+
+      const titleEl = backdrop.querySelector('#easeConfirmTitle');
+      const messageEl = backdrop.querySelector('#easeConfirmMessage');
+      const cancelBtn = backdrop.querySelector('#easeConfirmCancel');
+      const okBtn = backdrop.querySelector('#easeConfirmOk');
+      let resolver = null;
+
+      const closeConfirm = (result) => {
+        backdrop.classList.remove('open');
+        document.removeEventListener('keydown', onKeyDown);
+        if (resolver) resolver(!!result);
+        resolver = null;
+      };
+      const onKeyDown = (e) => {
+        if (e.key === 'Escape') closeConfirm(false);
+      };
+      cancelBtn.addEventListener('click', () => closeConfirm(false));
+      okBtn.addEventListener('click', () => closeConfirm(true));
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeConfirm(false);
+      });
+
+      window.__easeConfirm = function easeConfirm(message, title = 'Confirm') {
+        return new Promise((resolve) => {
+          resolver = resolve;
+          titleEl.textContent = String(title || 'Confirm');
+          messageEl.textContent = String(message || '').trim();
+          backdrop.classList.add('open');
+          document.addEventListener('keydown', onKeyDown);
+          okBtn.focus();
+        });
+      };
+    })();
+  </script>
 
   <script src="shared/sidebar.js" defer></script>
   <script type="module">
@@ -92,17 +446,98 @@
     const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcm5xa29venNsb2VxenhwZ2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1ODQ5MjgsImV4cCI6MjA3NTE2MDkyOH0.E4Lp4LtyvRfFoImUkZMFyVBM7sro4aoNlQEa7sUIsIs";
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const PROGRAMS_TABLE_CANDIDATES = ["campus_programs", "programs", "courses"];
     const ADMIN_CAMPUS = (localStorage.getItem("adminCampus") || "").trim();
     if (!ADMIN_CAMPUS) window.location.href = "login-signup.html";
 
     document.addEventListener('DOMContentLoaded', () => {
       if (window.loadAdminSidebar) window.loadAdminSidebar('scholarships');
+      document.querySelectorAll('form, input, textarea, select').forEach((el) => {
+        el.setAttribute('autocomplete', 'off');
+      });
     });
 
+    const tabScholarships = document.getElementById("tabScholarships");
+    const tabPrograms = document.getElementById("tabPrograms");
+    const scholarshipsPane = document.getElementById("scholarshipsPane");
+    const programsPane = document.getElementById("programsPane");
+    function setActiveTab(tab) {
+      const showPrograms = tab === "programs";
+      tabScholarships.classList.toggle("active", !showPrograms);
+      tabPrograms.classList.toggle("active", showPrograms);
+      scholarshipsPane.classList.toggle("active", !showPrograms);
+      programsPane.classList.toggle("active", showPrograms);
+    }
+    tabScholarships.addEventListener("click", () => setActiveTab("scholarships"));
+    tabPrograms.addEventListener("click", async () => {
+      setActiveTab("programs");
+      await fetchPrograms();
+    });
+
+    function normalizeCampusToken(value) {
+      return String(value || "")
+        .toLowerCase()
+        .replace(/^prmsu\s*/i, "")
+        .replace(/\./g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+    function buildCampusVariants(adminCampus) {
+      const normalized = normalizeCampusToken(adminCampus);
+      const variants = new Set();
+      const add = (v) => {
+        const text = String(v || "").trim();
+        if (text) variants.add(text);
+      };
+      if (normalized.includes("caste")) {
+        add("Caste");
+        add("Castillejos");
+        add("PRMSU Castillejos");
+      } else if (normalized.includes("sta cruz") || normalized.includes("stacruz")) {
+        add("Sta Cruz");
+        add("PRMSU Sta. Cruz");
+        add("PRMSU Sta Cruz");
+      } else if (normalized.includes("san marcelino")) {
+        add("San Marcelino");
+        add("PRMSU San Marcelino");
+      } else if (normalized.includes("candelaria")) {
+        add("Candelaria");
+        add("PRMSU Candelaria");
+      } else if (normalized.includes("masinloc")) {
+        add("Masinloc");
+        add("PRMSU Masinloc");
+      } else if (normalized.includes("botolan")) {
+        add("Botolan");
+        add("PRMSU Botolan");
+      } else if (normalized.includes("iba")) {
+        add("Iba");
+        add("IBA");
+        add("PRMSU Iba");
+      } else {
+        add(adminCampus);
+        add(`PRMSU ${adminCampus}`);
+      }
+      return Array.from(variants);
+    }
+    const ADMIN_CAMPUS_VARIANTS = buildCampusVariants(ADMIN_CAMPUS);
+    const ADMIN_CAMPUS_TOKENS = new Set(ADMIN_CAMPUS_VARIANTS.map((v) => normalizeCampusToken(v)));
+    const ADMIN_PRIMARY_CAMPUS =
+      ADMIN_CAMPUS_VARIANTS.find((v) => /^PRMSU\s/i.test(v)) || ADMIN_CAMPUS_VARIANTS[0] || ADMIN_CAMPUS;
+
+    const programCampusBadge = document.getElementById("programCampusBadge");
+    if (programCampusBadge) {
+      programCampusBadge.textContent = `Campus: ${ADMIN_CAMPUS}`;
+    }
+
     const scholarshipForm = document.getElementById('scholarshipForm');
+    const scholarshipSubmitBtn = document.getElementById('scholarshipSubmitBtn');
+    const scholarshipCancelEditBtn = document.getElementById('scholarshipCancelEditBtn');
+    const scholarshipList = document.getElementById('scholarshipList');
+    const scholarshipEditingBadge = document.getElementById('scholarshipEditingBadge');
     const requirementInput = document.getElementById('schRequirement');
     const requirementsPreview = document.getElementById('requirementsPreview');
     let requirements = [];
+    let editingScholarshipId = null;
 
     requirementInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
@@ -130,6 +565,17 @@
       });
     }
 
+    function resetScholarshipFormMode() {
+      editingScholarshipId = null;
+      scholarshipForm.reset();
+      requirements = [];
+      renderRequirements();
+      scholarshipSubmitBtn.textContent = 'Save Scholarship';
+      scholarshipCancelEditBtn.style.display = 'none';
+      scholarshipEditingBadge.style.display = 'none';
+      scholarshipEditingBadge.textContent = '';
+    }
+
     scholarshipForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const data = {
@@ -139,32 +585,34 @@
         amount: document.getElementById('schAmount').value,
         description: document.getElementById('schDesc').value
       };
-      const { error } = await supabase.from('scholarships').insert([data]);
+      const query = editingScholarshipId
+        ? supabase.from('scholarships').update(data).eq('id', editingScholarshipId)
+        : supabase.from('scholarships').insert([data]);
+      const { error } = await query;
       if (error) {
         console.error('Error saving scholarship:', error);
         alert('Failed to save scholarship.');
       } else {
-        alert('Scholarship saved.');
-        scholarshipForm.reset();
-        requirements = [];
-        renderRequirements();
-        fetchScholarships();
+        alert(editingScholarshipId ? 'Scholarship updated.' : 'Scholarship saved.');
+        resetScholarshipFormMode();
+        await fetchScholarships();
       }
     });
 
+    scholarshipCancelEditBtn.addEventListener('click', () => resetScholarshipFormMode());
+
     async function fetchScholarships(){
-      const list = document.getElementById('scholarshipList');
-      list.innerHTML = '<p class="muted">Loading...</p>';
+      scholarshipList.innerHTML = '<p class="muted">Loading...</p>';
       const { data, error } = await supabase
         .from('scholarships')
         .select('*')
         .order('created_at', { ascending: false });
       if (error) {
         console.error('Fetch error:', error);
-        list.innerHTML = '<p class="muted">Failed to load scholarships.</p>';
+        scholarshipList.innerHTML = '<p class="muted">Failed to load scholarships.</p>';
         return;
       }
-      list.innerHTML = '';
+      scholarshipList.innerHTML = '';
       (data||[]).forEach(sch => {
         const card = document.createElement('div');
         card.className = 'sch-card';
@@ -174,12 +622,999 @@
           <div class="muted"><strong>Grade:</strong> ${sch.grade || ''}</div>
           <div class="muted"><strong>Amount:</strong> ${sch.amount || ''}</div>
           <div class="muted"><strong>Required Docs:</strong> ${(sch.requirements||[]).join(', ')}</div>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button class="btn btn-secondary" type="button" data-action="edit-scholarship" data-id="${sch.id}">Edit</button>
+            <button class="btn btn-danger" type="button" data-action="delete-scholarship" data-id="${sch.id}">Delete</button>
+          </div>
         `;
-        list.appendChild(card);
+        scholarshipList.appendChild(card);
       });
     }
 
+    scholarshipList.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const action = btn.getAttribute('data-action');
+      const id = btn.getAttribute('data-id');
+      if (!id) return;
+
+      if (action === 'edit-scholarship') {
+        const { data, error } = await supabase
+          .from('scholarships')
+          .select('*')
+          .eq('id', id)
+          .single();
+        if (error || !data) {
+          console.error('Scholarship fetch for edit failed:', error);
+          alert('Failed to load scholarship details.');
+          return;
+        }
+        editingScholarshipId = id;
+        document.getElementById('schName').value = data.name || '';
+        document.getElementById('schGrade').value = data.grade || '';
+        document.getElementById('schAmount').value = data.amount || '';
+        document.getElementById('schDesc').value = data.description || '';
+        requirements = Array.isArray(data.requirements) ? data.requirements.map((r) => String(r || '').trim()).filter(Boolean) : [];
+        renderRequirements();
+        scholarshipSubmitBtn.textContent = 'Save Changes';
+        scholarshipCancelEditBtn.style.display = 'inline-block';
+        scholarshipEditingBadge.textContent = `Editing scholarship: ${data.name || 'Untitled'}`;
+        scholarshipEditingBadge.style.display = 'inline-block';
+        scrollToTopEdge();
+        return;
+      }
+
+      if (action === 'delete-scholarship') {
+        const ok = await window.__easeConfirm('Delete this scholarship?', 'Delete Scholarship');
+        if (!ok) return;
+        const { error } = await supabase
+          .from('scholarships')
+          .delete()
+          .eq('id', id);
+        if (error) {
+          console.error('Scholarship delete failed:', error);
+          alert('Failed to delete scholarship.');
+          return;
+        }
+        if (String(editingScholarshipId || '') === String(id)) {
+          resetScholarshipFormMode();
+        }
+        alert('Scholarship deleted.');
+        await fetchScholarships();
+      }
+    });
+
+    const programForm = document.getElementById("programForm");
+    const programDepartment = document.getElementById("programDepartment");
+    const programDepartmentNew = document.getElementById("programDepartmentNew");
+    const programCourse = document.getElementById("programCourse");
+    const programCourseGroup = document.getElementById("programCourseGroup");
+    const programDescription = document.getElementById("programDescription");
+    const programSubmitBtn = document.getElementById("programSubmitBtn");
+    const programAddDepartmentBtn = document.getElementById("programAddDepartmentBtn");
+    const programCancelEdit = document.getElementById("programCancelEdit");
+    const programsList = document.getElementById("programsList");
+    const globalTargetSwitch = document.getElementById("globalTargetSwitch");
+
+    const CAMPUS_DEPARTMENT_BASELINE = {
+      "PRMSU Iba": [
+        "College of Business, Accountancy and Public Administration (CBAPA)",
+        "College of Tourism and Hospitality Management (CTHM)",
+        "College of Arts and Sciences (CAS)",
+        "College of Agriculture and Forestry (CAF)",
+        "College of Industrial Technology (CIT)",
+        "College of Communication and Information Technology (CCIT)",
+        "College of Nursing (CON)",
+        "College of Engineering (COE)"
+      ],
+      "PRMSU Castillejos": [
+        "College of Business, Accountancy and Public Administration (CBAPA)",
+        "College of Communication and Information Technology (CCIT)"
+      ],
+      "PRMSU San Marcelino": [
+        "College of Agriculture and Forestry (CAF)",
+        "College of Tourism and Hospitality Management (CTHM)",
+        "College of Communication and Information Technology (CCIT)"
+      ],
+      "PRMSU Botolan": [
+        "College of Agriculture and Forestry (CAF)"
+      ],
+      "PRMSU Candelaria": [
+        "College of Agriculture and Forestry (CAF)",
+        "College of Communication and Information Technology (CCIT)"
+      ],
+      "PRMSU Masinloc": [
+        "College of Communication and Information Technology (CCIT)",
+        "College of Business, Accountancy and Public Administration (CBAPA)"
+      ],
+      "PRMSU Sta. Cruz": [
+        "College of Communication and Information Technology (CCIT)"
+      ]
+    };
+    const CAMPUS_PROGRAM_BASELINE = {
+      "PRMSU Iba": {
+        "College of Business, Accountancy and Public Administration (CBAPA)": [
+          "Bachelor of Science in Accountancy",
+          "Bachelor of Science in Accounting Information System",
+          "Bachelor of Science in Business Administration Major in Financial Management",
+          "Bachelor of Science in Business Administration Major in Human Resource Management",
+          "Bachelor of Science in Business Administration Major in Marketing Management",
+          "Bachelor of Science in Public Administration"
+        ],
+        "College of Tourism and Hospitality Management (CTHM)": [
+          "Bachelor of Science in Tourism Management",
+          "Bachelor of Science in Hospitality Management"
+        ],
+        "College of Arts and Sciences (CAS)": [
+          "Bachelor of Science in Biology",
+          "Bachelor of Science in Psychology"
+        ],
+        "College of Agriculture and Forestry (CAF)": [
+          "Bachelor of Science in Environmental Science"
+        ],
+        "College of Industrial Technology (CIT)": [
+          "Bachelor of Science in Industrial Technology",
+          "Bachelor of Technical Vocational Teacher Education",
+          "Bachelor of Technology and Livelihood Education"
+        ],
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Computer Science",
+          "Bachelor of Science in Information Technology"
+        ],
+        "College of Nursing (CON)": [
+          "Bachelor of Science in Nursing"
+        ],
+        "College of Engineering (COE)": [
+          "Bachelor of Science in Electrical Engineering",
+          "Bachelor of Science in Civil Engineering",
+          "Bachelor of Science in Mechanical Engineering",
+          "Bachelor of Science in Computer Engineering"
+        ]
+      },
+      "PRMSU Castillejos": {
+        "College of Business, Accountancy and Public Administration (CBAPA)": [
+          "Bachelor of Science in Business Administration Major in Human Resource Management"
+        ],
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Computer Science"
+        ]
+      },
+      "PRMSU San Marcelino": {
+        "College of Agriculture and Forestry (CAF)": [
+          "Bachelor of Science in Agriculture",
+          "Bachelor of Science in Agricultural Technology"
+        ],
+        "College of Tourism and Hospitality Management (CTHM)": [
+          "Bachelor of Science in Hospitality Management",
+          "Bachelor of Science in Tourism Management"
+        ],
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Computer Science"
+        ]
+      },
+      "PRMSU Botolan": {
+        "College of Agriculture and Forestry (CAF)": [
+          "Bachelor of Science in Agriculture",
+          "Bachelor of Science in Forestry"
+        ]
+      },
+      "PRMSU Candelaria": {
+        "College of Agriculture and Forestry (CAF)": [
+          "Bachelor of Science in Fisheries"
+        ],
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Information Technology"
+        ]
+      },
+      "PRMSU Masinloc": {
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Information Technology"
+        ],
+        "College of Business, Accountancy and Public Administration (CBAPA)": [
+          "Bachelor of Science in Business Administration Major in Human Resource Management"
+        ]
+      },
+      "PRMSU Sta. Cruz": {
+        "College of Communication and Information Technology (CCIT)": [
+          "Bachelor of Science in Computer Science"
+        ]
+      }
+    };
+    const programEditingBadge = document.getElementById("programEditingBadge");
+
+    let programs = [];
+    let editingProgramId = null;
+    let editingProgramRow = null;
+    let editingDepartmentName = null;
+    let isAddingDepartmentMode = false;
+    let globalActionTarget = "course";
+    let departmentMetaRows = [];
+    let activeProgramsTable = null;
+    let programsCourseColumn = "course_name";
+    let programsReadOnly = false;
+    let baselineAutoSeedChecked = false;
+
+    function refreshProgramFormButtons() {
+      const isEditing = !!editingProgramId || !!editingDepartmentName;
+      programAddDepartmentBtn.style.display = isEditing ? "none" : "inline-block";
+    }
+
+    function setGlobalActionTarget(target) {
+      globalActionTarget = target === "department" ? "department" : "course";
+      if (!globalTargetSwitch) return;
+      globalTargetSwitch.querySelectorAll(".target-btn").forEach((btn) => {
+        const isActive = btn.getAttribute("data-target") === globalActionTarget;
+        btn.classList.toggle("active", isActive);
+      });
+    }
+
+    function localCampusMatch(campusValue) {
+      return ADMIN_CAMPUS_TOKENS.has(normalizeCampusToken(campusValue));
+    }
+
+    function normalizeProgramRow(row, source = "") {
+      const src = String(source || row?._source || "").trim();
+      const id = row.id ?? row.program_id ?? `${Date.now()}-${Math.random()}`;
+      const pkField = row.id != null ? "id" : row.program_id != null ? "program_id" : null;
+      return {
+        id,
+        campus: String(row.campus || ADMIN_CAMPUS).trim(),
+        department: String(row.department ?? row.college ?? "").trim(),
+        course_name: String(row.course_name ?? row.course ?? row.name ?? "").trim(),
+        description: String(row.description ?? row.details ?? "").trim(),
+        _source: src || "remote",
+        _pkField: row?._pkField || pkField,
+        _pkValue: row?._pkValue ?? id
+      };
+    }
+
+    function getCustomDepartmentsForCampus() {
+      return departmentMetaRows.filter((row) => row.department && localCampusMatch(row.campus));
+    }
+
+    function getBaselineDepartmentsForCampus() {
+      const key = Object.keys(CAMPUS_DEPARTMENT_BASELINE).find(
+        (campus) => localCampusMatch(campus)
+      );
+      return key ? (CAMPUS_DEPARTMENT_BASELINE[key] || []) : [];
+    }
+
+    function getBaselineProgramRowsForCampus() {
+      const key = Object.keys(CAMPUS_PROGRAM_BASELINE).find(
+        (campus) => localCampusMatch(campus)
+      );
+      if (!key) return [];
+      const map = CAMPUS_PROGRAM_BASELINE[key] || {};
+      const rows = [];
+      Object.entries(map).forEach(([department, courses]) => {
+        (courses || []).forEach((course) => {
+          rows.push(
+            normalizeProgramRow({
+              id: `baseline-${key}-${department}-${course}`,
+              campus: key,
+              department,
+              course_name: course,
+              description: ""
+            }, "baseline")
+          );
+        });
+      });
+      return rows;
+    }
+
+    async function resolveProgramsTable() {
+      if (activeProgramsTable) return;
+
+      const isMissingTableError = (err) => {
+        const code = String(err?.code || "").trim().toUpperCase();
+        const msg = String(err?.message || "").toLowerCase();
+        return (
+          code === "42P01" ||
+          code === "PGRST205" ||
+          msg.includes("could not find the table") ||
+          msg.includes("does not exist")
+        );
+      };
+
+      for (const candidate of PROGRAMS_TABLE_CANDIDATES) {
+        const probe = await supabase.from(candidate).select("*").limit(1);
+        if (!probe.error) {
+          activeProgramsTable = candidate;
+          const sample = (probe.data || [])[0] || {};
+          programsCourseColumn = Object.prototype.hasOwnProperty.call(sample, "course_name") ? "course_name" : "course";
+          return;
+        }
+        // If table appears to exist but read is blocked by policy, keep it as active for write attempts.
+        if (!isMissingTableError(probe.error)) {
+          activeProgramsTable = candidate;
+          programsCourseColumn = "course_name";
+          return;
+        }
+      }
+      activeProgramsTable = null;
+      programsReadOnly = true;
+    }
+
+    async function fetchDerivedProgramsFromSupabase() {
+      const sources = [];
+      const fromMain = await supabase
+        .from("applicants_main")
+        .select("campus,college,course");
+      if (!fromMain.error && Array.isArray(fromMain.data)) {
+        sources.push(
+          ...fromMain.data
+            .filter((r) => localCampusMatch(r?.campus))
+            .map((r) =>
+            normalizeProgramRow({
+              campus: r.campus,
+              department: r.college,
+              course_name: r.course,
+              description: ""
+            }, "derived")
+          )
+        );
+      }
+
+      const fromIskolar = await supabase
+        .from("applicants_iskolar")
+        .select("campus,department,course");
+      if (!fromIskolar.error && Array.isArray(fromIskolar.data)) {
+        sources.push(
+          ...fromIskolar.data
+            .filter((r) => localCampusMatch(r?.campus))
+            .map((r) =>
+            normalizeProgramRow({
+              campus: r.campus,
+              department: r.department,
+              course_name: r.course,
+              description: ""
+            }, "derived")
+          )
+        );
+      }
+
+      return dedupePrograms(sources);
+    }
+
+    function dedupePrograms(rows) {
+      const map = new Map();
+      (rows || []).forEach((raw) => {
+        const row = normalizeProgramRow(raw, raw?._source);
+        if (!row.department || !row.course_name || !localCampusMatch(row.campus)) return;
+        const key = `${row.department.toLowerCase()}||${row.course_name.toLowerCase()}`;
+        const existing = map.get(key);
+        if (!existing) {
+          map.set(key, row);
+          return;
+        }
+        const preferRow =
+          (!existing.description && row.description) ||
+          (existing._source !== "remote" && row._source === "remote");
+        if (preferRow) {
+          map.set(key, row);
+        }
+      });
+      return Array.from(map.values());
+    }
+
+    function renderDepartmentOptions(selectedDepartment = "") {
+      const existing = new Set(programs.map((p) => p.department).filter(Boolean));
+      const baseline = new Set(getBaselineDepartmentsForCampus().filter(Boolean));
+      const custom = new Set(getCustomDepartmentsForCampus().map((d) => d.department).filter(Boolean));
+      const departments = Array.from(new Set([...existing, ...baseline, ...custom])).sort((a, b) => a.localeCompare(b));
+      programDepartment.innerHTML = `<option value="">Select Department</option>`;
+      departments.forEach((dept) => {
+        const option = document.createElement("option");
+        option.value = dept;
+        option.textContent = dept;
+        programDepartment.appendChild(option);
+      });
+      if (selectedDepartment && departments.includes(selectedDepartment)) {
+        programDepartment.value = selectedDepartment;
+      }
+    }
+
+    function setProgramFormMode(mode) {
+      const next = mode === "department" ? "department" : "course";
+      isAddingDepartmentMode = next === "department";
+      if (isAddingDepartmentMode) {
+        programDepartment.style.display = "none";
+        programDepartment.required = false;
+        programDepartmentNew.style.display = "block";
+        programDepartmentNew.required = true;
+        programCourseGroup.style.display = "none";
+        programCourse.required = false;
+        programSubmitBtn.textContent = "Save Department";
+        programAddDepartmentBtn.textContent = "Add Course";
+      } else {
+        programDepartment.style.display = "block";
+        programDepartment.required = true;
+        programDepartmentNew.style.display = "none";
+        programDepartmentNew.required = false;
+        programCourseGroup.style.display = "block";
+        programCourse.required = true;
+        programSubmitBtn.textContent = editingProgramId ? "Save Changes" : "Add Course";
+        programAddDepartmentBtn.textContent = "Add Department";
+        editingDepartmentName = null;
+      }
+      refreshProgramFormButtons();
+
+      if (editingProgramId || editingDepartmentName) {
+        programEditingBadge.style.display = "inline-block";
+      } else if (isAddingDepartmentMode) {
+        programEditingBadge.textContent = "Adding new department";
+        programEditingBadge.style.display = "inline-block";
+      } else {
+        programEditingBadge.style.display = "none";
+        programEditingBadge.textContent = "";
+      }
+    }
+
+    function renderPrograms() {
+      if (!programsList) return;
+      const grouped = new Map();
+      programs.forEach((row) => {
+        if (!grouped.has(row.department)) grouped.set(row.department, []);
+        grouped.get(row.department).push(row);
+      });
+      const customDeptMeta = new Map();
+      getCustomDepartmentsForCampus().forEach((d) => {
+        if (!customDeptMeta.has(d.department)) customDeptMeta.set(d.department, d.description || "");
+      });
+      const allDepartments = Array.from(
+        new Set([
+          ...Array.from(grouped.keys()),
+          ...getBaselineDepartmentsForCampus(),
+          ...Array.from(customDeptMeta.keys())
+        ])
+      ).filter(Boolean).sort((a, b) => a.localeCompare(b));
+      if (!allDepartments.length) {
+        programsList.innerHTML = `<p class="muted">No courses configured for ${ADMIN_CAMPUS} yet.</p>`;
+        renderDepartmentOptions();
+        return;
+      }
+      programsList.innerHTML = "";
+      allDepartments.forEach((department) => {
+        const groupCard = document.createElement("div");
+        groupCard.className = "program-group";
+        const items = grouped.get(department) || [];
+        items.sort((a, b) => a.course_name.localeCompare(b.course_name));
+        const first = items[0] || null;
+        const meta = first?.description || customDeptMeta.get(department) || (items.length ? "" : "No courses yet in this department.");
+        const selectOptions = items.length
+          ? items.map((item) => `<option value="${item.id}">${item.course_name}</option>`).join("")
+          : `<option value="">No courses yet</option>`;
+        groupCard.innerHTML = `
+          <h4>${department || "Uncategorized"}</h4>
+          <div class="dept-course-select-wrap">
+            <label style="margin:0 0 6px; display:block; font-size:12px; font-weight:700;">Course</label>
+            <select class="department-course-select" ${items.length ? "" : "disabled"}>
+              ${selectOptions}
+            </select>
+          </div>
+          <div class="program-selected-meta">${meta}</div>
+          <div class="program-actions" data-department="${department}">
+            <button class="btn btn-secondary" type="button" data-action="edit-target">Edit</button>
+            <button class="btn btn-danger" type="button" data-action="delete-target">Delete</button>
+          </div>
+        `;
+        programsList.appendChild(groupCard);
+      });
+      renderDepartmentOptions(programDepartment.value);
+    }
+
+    function resetProgramForm() {
+      editingProgramId = null;
+      editingProgramRow = null;
+      editingDepartmentName = null;
+      programForm.reset();
+      programCancelEdit.style.display = "none";
+      renderDepartmentOptions();
+      setProgramFormMode("course");
+      refreshProgramFormButtons();
+      programEditingBadge.style.display = "none";
+      programEditingBadge.textContent = "";
+    }
+
+    async function fetchPrograms() {
+      programsList.innerHTML = '<p class="muted">Loading...</p>';
+      await resolveProgramsTable();
+      if (!activeProgramsTable) {
+        programs = dedupePrograms([
+          ...(await fetchDerivedProgramsFromSupabase()),
+          ...getBaselineProgramRowsForCampus()
+        ]);
+        departmentMetaRows = [];
+        programsReadOnly = true;
+        renderPrograms();
+        if (!programs.length) {
+          programsList.innerHTML = '<p class="muted">Failed to load programs.</p>';
+        }
+        return;
+      }
+
+      if (!baselineAutoSeedChecked && !programsReadOnly) {
+        try {
+          await seedBaselinePrograms(false);
+        } catch (err) {
+          console.warn("Automatic baseline seed skipped:", err);
+        }
+        baselineAutoSeedChecked = true;
+      }
+
+      const { data, error } = await supabase
+        .from(activeProgramsTable)
+        .select("*");
+      if (error) {
+        console.error("Programs fetch failed:", error);
+        programs = dedupePrograms([
+          ...(await fetchDerivedProgramsFromSupabase()),
+          ...getBaselineProgramRowsForCampus()
+        ]);
+        departmentMetaRows = [];
+        programsReadOnly = true;
+        renderPrograms();
+        return;
+      }
+      programsReadOnly = false;
+      const rows = (data || [])
+        .map((r) => normalizeProgramRow(r, "remote"))
+        .filter((row) => localCampusMatch(row.campus));
+      const isDepartmentOnly = (row) => {
+        const token = String(row.course_name || "").trim().toLowerCase();
+        return !token || token === "__department_only__";
+      };
+      departmentMetaRows = rows.filter(isDepartmentOnly);
+      programs = dedupePrograms([
+        ...rows.filter((row) => !isDepartmentOnly(row)),
+        ...getBaselineProgramRowsForCampus()
+      ]);
+      renderPrograms();
+    }
+
+    async function seedBaselinePrograms(interactive = false) {
+      await resolveProgramsTable();
+      if (!activeProgramsTable || programsReadOnly) {
+        if (interactive) alert("Programs table is not available for write.");
+        return { inserted: 0, skipped: true };
+      }
+
+      const baselineRows = getBaselineProgramRowsForCampus().filter(
+        (r) => String(r.course_name || "").trim().toLowerCase() !== "__department_only__"
+      );
+      if (!baselineRows.length) {
+        if (interactive) alert("No baseline programs found for this campus.");
+        return { inserted: 0, skipped: true };
+      }
+
+      const { data: existingData, error: existingError } = await supabase
+        .from(activeProgramsTable)
+        .select("*");
+      if (existingError) {
+        if (interactive) alert("Failed to read existing programs.");
+        throw existingError;
+      }
+
+      const existingKeys = new Set(
+        (existingData || [])
+          .map((r) => normalizeProgramRow(r, "remote"))
+          .filter((r) => localCampusMatch(r.campus))
+          .map((r) => `${String(r.department || "").trim().toLowerCase()}||${String(r.course_name || "").trim().toLowerCase()}`)
+      );
+
+      const missing = baselineRows.filter((r) => {
+        const key = `${String(r.department || "").trim().toLowerCase()}||${String(r.course_name || "").trim().toLowerCase()}`;
+        return !existingKeys.has(key);
+      });
+
+      if (!missing.length) {
+        if (interactive) alert("All baseline programs are already seeded.");
+        return { inserted: 0, skipped: true };
+      }
+
+      const insertPayload = missing.map((r) => ({
+        campus: ADMIN_PRIMARY_CAMPUS,
+        department: r.department,
+        [programsCourseColumn || "course_name"]: r.course_name,
+        description: r.description || ""
+      }));
+
+      const { error: insertError } = await supabase
+        .from(activeProgramsTable)
+        .insert(insertPayload);
+      if (insertError) {
+        if (interactive) alert("Failed to seed baseline programs.");
+        throw insertError;
+      }
+
+      return { inserted: missing.length, skipped: false };
+    }
+
+    async function ensureProgramsTableForWrite() {
+      if (!activeProgramsTable) {
+        await resolveProgramsTable();
+      }
+      if (!activeProgramsTable) {
+        return {
+          error: {
+            message: "Programs table is not available for write. Run schema/setup-campus-programs.sql in Supabase SQL Editor."
+          }
+        };
+      }
+      return { error: null };
+    }
+
+    async function saveProgram(payload) {
+      const ready = await ensureProgramsTableForWrite();
+      if (ready.error) return ready;
+      if (editingProgramId) {
+        const candidates = [];
+        if (editingProgramRow?._pkField && editingProgramRow?._pkValue != null) {
+          candidates.push({ field: editingProgramRow._pkField, value: editingProgramRow._pkValue });
+        }
+        candidates.push({ field: "id", value: editingProgramId });
+        candidates.push({ field: "program_id", value: editingProgramId });
+
+        const payloads = [
+          { ...payload },
+          {
+            campus: payload.campus,
+            department: payload.department,
+            course: payload.course_name,
+            description: payload.description
+          }
+        ];
+
+        for (const body of payloads) {
+          for (const key of candidates) {
+            const { error } = await supabase.from(activeProgramsTable).update(body).eq(key.field, key.value);
+            if (!error) return { error: null };
+          }
+          if (editingProgramRow) {
+            const matchCourseField = Object.prototype.hasOwnProperty.call(body, "course_name") ? "course_name" : "course";
+            const oldCourse = editingProgramRow.course_name;
+            const { error } = await supabase
+              .from(activeProgramsTable)
+              .update(body)
+              .eq("campus", editingProgramRow.campus)
+              .eq("department", editingProgramRow.department)
+              .eq(matchCourseField, oldCourse);
+            if (!error) return { error: null };
+          }
+        }
+
+        return { error: { message: "Unable to update program in database." } };
+      }
+
+      const insertPrimary = await supabase.from(activeProgramsTable).insert([payload]);
+      if (!insertPrimary.error) return { error: null };
+      const missingColumn = /column .*course_name.* does not exist/i.test(String(insertPrimary.error?.message || ""));
+      if (missingColumn) {
+        const fallbackPayload = {
+          campus: payload.campus,
+          department: payload.department,
+          course: payload.course_name,
+          description: payload.description
+        };
+        const retry = await supabase.from(activeProgramsTable).insert([fallbackPayload]);
+        if (!retry.error) return { error: null };
+      }
+      return { error: insertPrimary.error || { message: "Unable to insert program in database." } };
+    }
+
+    async function renameDepartmentEverywhere(oldDepartment, newDepartment) {
+      const ready = await ensureProgramsTableForWrite();
+      if (ready.error) throw new Error(ready.error.message || "Programs table is not available for write.");
+      const oldDept = String(oldDepartment || "").trim();
+      const newDept = String(newDepartment || "").trim();
+      if (!oldDept || !newDept || oldDept === newDept) return;
+
+      const { error } = await supabase
+        .from(activeProgramsTable)
+        .update({ department: newDept })
+        .in("campus", ADMIN_CAMPUS_VARIANTS)
+        .eq("department", oldDept);
+      if (error) throw error;
+    }
+
+    async function deleteDepartmentEverywhere(departmentName) {
+      const ready = await ensureProgramsTableForWrite();
+      if (ready.error) return ready;
+      const target = String(departmentName || "").trim();
+      if (!target) return { error: { message: "Invalid department." } };
+
+      const { error } = await supabase
+        .from(activeProgramsTable)
+        .delete()
+        .in("campus", ADMIN_CAMPUS_VARIANTS)
+        .eq("department", target);
+      return { error: error || null };
+    }
+
+    async function deleteProgram(programId) {
+      const ready = await ensureProgramsTableForWrite();
+      if (ready.error) return ready;
+      const row = programs.find((p) => String(p.id) === String(programId));
+      const candidates = [];
+      if (row?._pkField && row?._pkValue != null) {
+        candidates.push({ field: row._pkField, value: row._pkValue });
+      }
+      candidates.push({ field: "id", value: programId });
+      candidates.push({ field: "program_id", value: programId });
+
+      for (const key of candidates) {
+        const { error } = await supabase.from(activeProgramsTable).delete().eq(key.field, key.value);
+        if (!error) return { error: null };
+      }
+      if (row) {
+        const { error } = await supabase
+          .from(activeProgramsTable)
+          .delete()
+          .eq("campus", row.campus)
+          .eq("department", row.department)
+          .eq("course_name", row.course_name);
+        if (!error) return { error: null };
+      }
+      return { error: { message: "Unable to delete program." } };
+    }
+
+    async function upsertDepartmentMeta(departmentName, details = "") {
+      const ready = await ensureProgramsTableForWrite();
+      if (ready.error) return ready;
+      const department = String(departmentName || "").trim();
+      if (!department) return { error: { message: "Department is required." } };
+      const description = String(details || "").trim();
+      const sentinel = "__DEPARTMENT_ONLY__";
+      const existing = getCustomDepartmentsForCampus().find(
+        (d) => String(d.department || "").trim().toLowerCase() === department.toLowerCase()
+      );
+
+      const payloads = [
+        { campus: ADMIN_PRIMARY_CAMPUS, department, description, [programsCourseColumn]: sentinel },
+        { campus: ADMIN_PRIMARY_CAMPUS, department, details: description, [programsCourseColumn]: sentinel },
+        { campus: ADMIN_PRIMARY_CAMPUS, department, description, details: description, [programsCourseColumn]: sentinel },
+        { campus: ADMIN_PRIMARY_CAMPUS, department, description, course_name: sentinel },
+        { campus: ADMIN_PRIMARY_CAMPUS, department, details: description, course_name: sentinel },
+        { campus: ADMIN_PRIMARY_CAMPUS, department, description, details: description, course_name: sentinel },
+        { campus: ADMIN_PRIMARY_CAMPUS, department, description, course: sentinel },
+        { campus: ADMIN_PRIMARY_CAMPUS, department, details: description, course: sentinel },
+        { campus: ADMIN_PRIMARY_CAMPUS, department, description, details: description, course: sentinel }
+      ];
+
+      let lastError = null;
+
+      // 1) If we already have a known row id, update by primary key first.
+      if (existing && existing._pkField && existing._pkValue != null) {
+        for (const body of payloads) {
+          const { data, error } = await supabase
+            .from(activeProgramsTable)
+            .update(body)
+            .eq(existing._pkField, existing._pkValue)
+            .select("*");
+          if (!error && Array.isArray(data) && data.length) return { error: null };
+          lastError = error;
+        }
+      }
+
+      // 2) Upsert by campus+department+sentinel course token (works when row exists but local cache is stale).
+      const matchCourseFields = Array.from(new Set([programsCourseColumn, "course_name", "course"]));
+      for (const body of payloads) {
+        for (const courseField of matchCourseFields) {
+          const { data, error } = await supabase
+            .from(activeProgramsTable)
+            .update(body)
+            .eq("campus", ADMIN_PRIMARY_CAMPUS)
+            .eq("department", department)
+            .eq(courseField, sentinel)
+            .select("*");
+          if (!error && Array.isArray(data) && data.length) return { error: null };
+          lastError = error;
+        }
+      }
+
+      // 3) Insert new sentinel row.
+      for (const body of payloads) {
+        const { error } = await supabase.from(activeProgramsTable).insert([body]);
+        if (!error) return { error: null };
+        lastError = error;
+      }
+
+      return { error: lastError || { message: "Unable to save department details in database." } };
+    }
+
+    programForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (isAddingDepartmentMode) {
+        const departmentName = String(programDepartmentNew.value || "").trim();
+        const details = String(programDescription.value || "").trim();
+        if (!departmentName) {
+          alert("Department is required.");
+          return;
+        }
+        if (editingDepartmentName && editingDepartmentName !== departmentName) {
+          try {
+            await renameDepartmentEverywhere(editingDepartmentName, departmentName);
+          } catch (err) {
+            console.error("Department rename error:", err);
+            alert("Failed to rename department.");
+            return;
+          }
+        }
+        const { error: deptError } = await upsertDepartmentMeta(departmentName, details);
+        if (deptError) {
+          console.error("Department save error:", deptError);
+          const reason = String(deptError.message || deptError.details || deptError.hint || "").trim();
+          alert(`Failed to save department details.${reason ? `\n${reason}` : ""}`);
+          return;
+        }
+        alert(editingDepartmentName ? "Department details updated." : "Department added.");
+        resetProgramForm();
+        await fetchPrograms();
+        return;
+      }
+
+      const department = String(programDepartment.value || "").trim();
+      const course = String(programCourse.value || "").trim();
+      const description = String(programDescription.value || "").trim();
+      if (!department || !course) {
+        alert("Department and course are required.");
+        return;
+      }
+      const payload = {
+        campus: ADMIN_PRIMARY_CAMPUS,
+        department,
+        course_name: course,
+        description
+      };
+      const { error } = await saveProgram(payload);
+      if (error) {
+        console.error("Program save error:", error);
+        alert("Failed to save course.");
+        return;
+      }
+      alert(editingProgramId ? "Course updated." : "Course added.");
+      resetProgramForm();
+      await fetchPrograms();
+    });
+
+    programAddDepartmentBtn.addEventListener("click", () => {
+      if (editingProgramId || editingDepartmentName) return;
+      setProgramFormMode(isAddingDepartmentMode ? "course" : "department");
+      if (isAddingDepartmentMode) {
+        programDepartmentNew.value = "";
+        programDescription.value = "";
+      }
+    });
+
+    programCancelEdit.addEventListener("click", () => resetProgramForm());
+
+    function getSelectedRowFromDepartmentCard(card) {
+      const select = card?.querySelector(".department-course-select");
+      if (!select) return null;
+      const selectedId = select.value;
+      return programs.find((p) => String(p.id) === String(selectedId)) || null;
+    }
+
+    function openEditForRow(row) {
+      editingProgramId = row.id;
+      editingProgramRow = row;
+      setProgramFormMode("course");
+      if (!Array.from(programDepartment.options).some((opt) => opt.value === row.department)) {
+        const extra = document.createElement("option");
+        extra.value = row.department;
+        extra.textContent = row.department;
+        programDepartment.appendChild(extra);
+      }
+      programDepartment.value = row.department || "";
+      programCourse.value = row.course_name || "";
+      programDescription.value = row.description || "";
+      programSubmitBtn.textContent = "Save Changes";
+      programCancelEdit.style.display = "inline-block";
+      programEditingBadge.textContent = `Editing course: ${row.course_name || "Untitled"} (${row.department || "No Department"})`;
+      programEditingBadge.style.display = "inline-block";
+      refreshProgramFormButtons();
+      setActiveTab("programs");
+      scrollToTopEdge();
+    }
+
+    function openEditDepartment(departmentName) {
+      const custom = getCustomDepartmentsForCampus().find((d) => d.department === departmentName);
+      editingDepartmentName = departmentName;
+      setProgramFormMode("department");
+      programDepartmentNew.value = departmentName || "";
+      programDescription.value = custom?.description || "";
+      programCancelEdit.style.display = "inline-block";
+      programEditingBadge.textContent = `Editing department: ${departmentName || "Untitled"}`;
+      programEditingBadge.style.display = "inline-block";
+      refreshProgramFormButtons();
+      setActiveTab("programs");
+      scrollToTopEdge();
+    }
+
+    function scrollToTopEdge() {
+      const contentEl = document.querySelector(".content");
+      if (contentEl) contentEl.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo(0, 0);
+      requestAnimationFrame(() => {
+        if (contentEl) contentEl.scrollTop = 0;
+        window.scrollTo(0, 0);
+      });
+    }
+
+    async function deleteRowWithConfirm(row) {
+      const ok = await window.__easeConfirm(`Delete "${row.course_name}" from ${row.department}?`, 'Delete Course');
+      if (!ok) return;
+      const { error } = await deleteProgram(row.id);
+      if (error) {
+        console.error("Program delete error:", error);
+        alert("Failed to delete course.");
+        return;
+      }
+      alert("Course deleted.");
+      await fetchPrograms();
+    }
+
+    programsList.addEventListener("change", (e) => {
+      const select = e.target.closest(".department-course-select");
+      if (!select) return;
+      const card = select.closest(".program-group");
+      const row = getSelectedRowFromDepartmentCard(card);
+      if (!card || !row) return;
+      const meta = card.querySelector(".program-selected-meta");
+      if (meta) meta.textContent = row.description || "";
+    });
+
+    globalTargetSwitch?.addEventListener("click", (e) => {
+      const targetBtn = e.target.closest(".target-btn");
+      if (!targetBtn) return;
+      setGlobalActionTarget(targetBtn.getAttribute("data-target") || "course");
+    });
+
+    programsList.addEventListener("click", async (e) => {
+      const actionBtn = e.target.closest("button[data-action='edit-target'], button[data-action='delete-target']");
+      if (!actionBtn) return;
+      const actions = actionBtn.closest(".program-actions");
+      const card = actionBtn.closest(".program-group");
+      const target = globalActionTarget || "course";
+      const deptName = actions?.getAttribute("data-department") || "";
+      const row = getSelectedRowFromDepartmentCard(card);
+      const action = actionBtn.getAttribute("data-action");
+
+      if (target === "course" && !row) {
+        setGlobalActionTarget("department");
+      }
+
+      if ((globalActionTarget || "course") === "department") {
+        if (action === "edit-target") {
+          openEditDepartment(deptName);
+          return;
+        }
+        const ok = await window.__easeConfirm(`Delete department "${deptName}" and all its courses for this campus?`, 'Delete Department');
+        if (!ok) return;
+        const { error } = await deleteDepartmentEverywhere(deptName);
+        if (error) alert("Failed to delete department.");
+        else {
+          alert("Department deleted.");
+          await fetchPrograms();
+        }
+        return;
+      }
+
+      if (!row) return;
+      if (action === "edit-target") {
+        openEditForRow(row);
+        return;
+      }
+      await deleteRowWithConfirm(row);
+    });
+
+    renderDepartmentOptions();
+    setProgramFormMode("course");
     fetchScholarships();
+    fetchPrograms();
   </script>
+  <script src="shared/autocomplete-off.js" defer></script>
 </body>
 </html>

@@ -4,7 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin Dashboard</title>
+  <script>
+    (function () {
+      const saved = localStorage.getItem('theme');
+      const isDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
   <!-- Light, soft UI design -->
   <style>
     /* === Existing Admin Styles (unchanged) === */
@@ -15,6 +26,7 @@
       --pill-bg: #eef2ff; --pill-border: #e1e8ff; --pill-text: #3f3f46; --link: #1d4ed8;
       --content-grad1: #fbfdff; --content-grad2: #f1f5fe;
       --kpi-total: #e8f3ff; --kpi-pending: #efe9ff; --kpi-approved: #fef7d7; --kpi-denied: #ffe7ea;
+      --card: #ffffff; --line: #dee6f3; --primary:#1c3d77; --primary-100:#eaf1ff;
     }
     [data-theme='dark']{
       --bg: #0c1424; --panel: #121b2d; --muted: #17233c; --border: #1f2a44; --text: #e6edf7;
@@ -23,6 +35,7 @@
       --pill-bg: #1c2d4d; --pill-border: #25406f; --pill-text: #dbe8ff; --link: #9dc4ff;
       --content-grad1: #0e1a2f; --content-grad2: #0a1427;
       --kpi-total: #0e203e; --kpi-pending: #142045; --kpi-approved: #2a2a12; --kpi-denied: #3a1620;
+      --card:#0f1c3c; --line:#1c2c56; --primary:#9db7ff; --primary-100:#172b59;
     }
     /* === Admin Dropdown Styling === */
 #adminForm select {
@@ -52,12 +65,20 @@
     body{
       background: var(--bg); color: var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-      display: flex; align-items: center; justify-content: center; padding: 16px;
+      margin: 0;
+      padding: 0;
+      display: block;
     }
-    .container{
-      display: flex; width: 96%; height: 92vh; background: var(--panel);
-      border: 1px solid var(--border); border-radius: 24px;
-      box-shadow: 0 10px 30px rgba(15,23,42,.05); overflow: hidden;
+    .admin-shell{
+      display: flex;
+      width: 100%;
+      height: 100svh;
+      min-height: 100vh;
+      background: var(--panel);
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      overflow: hidden;
     }
     .sidebar{ width: 280px; background: var(--sidebar); border-right: 1px solid var(--sidebar-border);
       padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
@@ -67,15 +88,27 @@
       border-radius:12px; color:var(--text); text-decoration:none; transition:.2s;}
     .menu a:hover{ background: var(--sidebar-hover);}
     .menu a.active{ background: var(--sidebar-active); border: 1px solid var(--border);}
-    .content{ flex:1; background: linear-gradient(180deg,var(--content-grad1),var(--content-grad2));
-      padding:28px 32px 32px; overflow:auto;}
+    .content{
+      flex:1;
+      width:100%;
+      background: linear-gradient(180deg,var(--content-grad1),var(--content-grad2));
+      padding:28px 24px 32px 32px;
+      overflow:auto;
+    }
     /* Uniform main content width across tabs */
-    .content > *{ max-width:1120px; margin-left:auto; margin-right:auto; }
+    .content > *{ width:100%; max-width:100% !important; margin-left:0; margin-right:0; }
+    header,
+    .card-container,
+    .table-panel{
+      width:100% !important;
+      max-width:100% !important;
+    }
     header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
     header h1{ font-size:26px; font-weight:800;}
     .header-right{ display:flex; align-items:center; gap:10px;}
     .date-badge{ background: var(--sidebar-hover); border:1px solid var(--border); padding:8px 12px;
       border-radius:12px; font-size:14px;}
+    .date-badge:empty{ display:none; }
     .theme-toggle{ background:var(--sidebar-active); border:1px solid var(--border);
       border-radius:999px; font-weight:700; cursor:pointer; padding:8px 12px;}
     .card-container{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
@@ -102,7 +135,7 @@
     .avatar{ width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background: var(--sidebar-hover); }
     .profile-name{ font-weight:800; }
     .profile-role{ font-size:12px; color:#6b7280; }
-    @media (max-width:860px){ .sidebar{display:none;} .container{width:100%; height:100vh; border-radius:0;} }
+    @media (max-width:860px){ .sidebar{display:none;} .admin-shell{width:100%; height:100vh; border-radius:0;} }
     
     /* === Scholarship Modal Styles === */
     .scholarship-modal {display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2000;
@@ -423,10 +456,183 @@ tbody tr:nth-child(even) {
   min-width: 120px; /* ensures Message column is visible */
 }
 
+/* Final dark-theme guard: force dashboard table/panel to keep dark styling */
+[data-theme='dark'] .admin-shell{
+  border-color: var(--border);
+  box-shadow: 0 16px 42px rgba(2,6,23,.45);
+}
+[data-theme='dark'] .content{
+  background: linear-gradient(180deg, var(--content-grad1), var(--content-grad2));
+}
+[data-theme='dark'] .table-panel{
+  background: var(--panel);
+  border-color: var(--border);
+}
+[data-theme='dark'] thead th{
+  background: var(--thead-bg) !important;
+  color: var(--thead-text) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+[data-theme='dark'] tbody td{
+  color: var(--text);
+  border-bottom: 1px solid var(--border) !important;
+}
+[data-theme='dark'] tbody tr:nth-child(even){
+  background-color: var(--muted) !important;
+}
+[data-theme='dark'] tbody tr:nth-child(odd){
+  background-color: transparent;
+}
+[data-theme='dark'] tbody tr:hover{
+  background-color: var(--row-hover) !important;
+}
+[data-theme='dark'] table th,
+[data-theme='dark'] table td{
+  border-color: var(--border) !important;
+}
+[data-theme='dark'] #statusFilter{
+  background: var(--thead-bg) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+[data-theme='dark'] #statusFilter option{
+  background: var(--thead-bg);
+  color: var(--text);
+}
+[data-theme='dark'] .table-panel::-webkit-scrollbar-thumb{
+  background: #2a3c61;
+}
+[data-theme='dark'] .status-pill{
+  font-weight: 800;
+}
+[data-theme='dark'] .status-pill.status-pending{
+  background: #3b465e !important;
+  color: #f8fafc !important;
+}
+[data-theme='dark'] .status-pill.status-processing{
+  background: #facc15 !important;
+  color: #111827 !important;
+}
+[data-theme='dark'] .status-pill.status-approved{
+  background: #22c55e !important;
+  color: #052e16 !important;
+}
+[data-theme='dark'] .status-pill.status-rejected{
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+[data-theme='dark'] .status-pill.status-default{
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* Remove the right-edge frame line so dashboard does not look boxed */
+.admin-shell{
+  border-right: 0 !important;
+}
+.table-panel{
+  border-right: 0 !important;
+}
+.table-scroll{
+  width: 100%;
+  max-height: calc(100svh - 320px);
+  overflow: auto;
+  scrollbar-gutter: stable both-edges;
+}
+.table-scroll table{
+  min-width: 1100px;
+}
+.table-panel table th:last-child,
+.table-panel table td:last-child{
+  border-right: 0 !important;
+}
+
+/* Dashboard table column tuning */
+.table-panel table th:nth-child(1),
+.table-panel table td:nth-child(1){
+  width: 3% !important;
+  min-width: 3% !important;
+  max-width: 3% !important;
+  text-align: center !important;
+}
+.table-panel table th:nth-child(3),
+.table-panel table td:nth-child(3){
+  width: 25%;
+}
+.table-panel table th:nth-child(2),
+.table-panel table td:nth-child(2){
+  width: 15% !important;
+}
+.table-panel table th:nth-child(4),
+.table-panel table td:nth-child(4){
+  width: 9% !important;
+}
+.table-panel table th:nth-child(6),
+.table-panel table td:nth-child(6){
+  width: 9% !important;
+}
+.table-panel table th:nth-child(7),
+.table-panel table td:nth-child(7){
+  width: 9% !important;
+}
+.table-panel table th:nth-child(8),
+.table-panel table td:nth-child(8){
+  width: 9% !important;
+}
+
+/* Match History table style/format */
+.table-panel .table-scroll{
+  overflow: auto;
+  border-radius: 12px;
+  background: transparent;
+}
+.table-panel table{
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed !important;
+  min-width: 0 !important;
+  font-family: "Poppins", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.table-panel table th,
+.table-panel table td{
+  padding: 11px 8px !important;
+  text-align: left;
+  border-top: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.table-panel table th{
+  background-color: #f3f6fe !important;
+  color: #64748b !important;
+  font-weight: 700 !important;
+  position: static !important;
+}
+.table-panel table tbody tr:nth-child(even){
+  background-color: #f9fbff !important;
+}
+.table-panel table tbody tr:hover{
+  background-color: #f3f6fe !important;
+  transition: 0.2s;
+}
+[data-theme='dark'] .table-panel table th{
+  background-color: #14284d !important;
+  color: #b8c8e6 !important;
+}
+[data-theme='dark'] .table-panel table tbody tr:nth-child(even){
+  background-color: #13254a !important;
+}
+[data-theme='dark'] .table-panel table tbody tr:hover{
+  background-color: #1a2f58 !important;
+}
+
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="admin-shell">
     <!-- Sidebar (shared) -->
     <div id="sidebar-root"></div>
 
@@ -436,7 +642,6 @@ tbody tr:nth-child(even) {
         <h1>Admin Dashboard</h1>
         <div class="header-right">
           <div class="date-badge" id="date-badge"></div>
-          <button id="theme-toggle" class="theme-toggle">Dark</button>
         </div>
       </header>
 
@@ -459,21 +664,23 @@ tbody tr:nth-child(even) {
       <option value="Processing">Processing</option>
     </select>
   </div>
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Name</th>
-        <th>Scholarship</th>
-        <th>Campus</th>
-        <th>Address</th>
-        <th>Files</th>
-        <th>Status</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="appTable"></tbody>
-  </table>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Scholarship</th>
+          <th>Campus</th>
+          <th>Address</th>
+          <th>Files</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="appTable"></tbody>
+    </table>
+  </div>
 </div>
 
     </main>
@@ -609,14 +816,6 @@ tbody tr:nth-child(even) {
 
 
     <div class="span-2">
-      <label for="adminRole">Role</label>
-      <select id="adminRole" name="adminRole" required>
-        <option value="">Select Role</option>
-        <option value="main_admin">Main Admin</option>
-        <option value="program_admin">Program Admin</option>
-      </select>
-    </div>
-    <div class="span-2">
       <button type="submit" class="confirm-btn">Add Admin</button> <!-- This is the Add button -->
     </div>
   </div>
@@ -624,6 +823,44 @@ tbody tr:nth-child(even) {
 
 <!-- FILE MODAL -->
 
+
+  <script>
+    (function installPromptAlerts() {
+      if (window.__easePromptInstalled) return;
+      window.__easePromptInstalled = true;
+
+      const style = document.createElement('style');
+      style.textContent = `
+        .ease-prompt-host{position:fixed;top:18px;right:18px;z-index:99999;display:grid;gap:10px;pointer-events:none}
+        .ease-prompt{min-width:280px;max-width:min(440px,calc(100vw - 36px));padding:12px 14px;border-radius:12px;border:1px solid #dbe7fb;background:#ffffff;color:#0f274b;box-shadow:0 12px 28px rgba(15,39,75,.14);display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start;animation:easePromptIn .2s ease}
+        .ease-prompt i{margin-top:2px;font-size:14px;color:#1d4ed8}
+        .ease-prompt .msg{font-size:13px;line-height:1.45;word-break:break-word}
+        @keyframes easePromptIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+      `;
+      document.head.appendChild(style);
+
+      const host = document.createElement('div');
+      host.className = 'ease-prompt-host';
+      host.setAttribute('aria-live', 'polite');
+      host.setAttribute('aria-atomic', 'true');
+      document.body.appendChild(host);
+
+      window.alert = function alertPrompt(message) {
+        const text = String(message || '').trim();
+        const item = document.createElement('div');
+        item.className = 'ease-prompt';
+        item.innerHTML = '<i class="fa-solid fa-circle-info" aria-hidden="true"></i><div class="msg"></div>';
+        item.querySelector('.msg').textContent = text;
+        host.appendChild(item);
+        setTimeout(() => {
+          item.style.opacity = '0';
+          item.style.transform = 'translateY(-4px)';
+          item.style.transition = 'opacity .18s ease, transform .18s ease';
+          setTimeout(() => item.remove(), 180);
+        }, 3200);
+      };
+    })();
+  </script>
 
   <!-- === Scripts === -->
   <script src="shared/sidebar.js" defer></script>
@@ -649,6 +886,116 @@ tbody tr:nth-child(even) {
       // if campus is not set, route to login to establish context
       window.location.href = "login-signup.html";
     }
+
+function normalizeCampusToken(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/^prmsu\s*/i, "")
+    .replace(/\./g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildCampusVariants(adminCampus) {
+  const normalized = normalizeCampusToken(adminCampus);
+  const variants = new Set();
+
+  const add = (v) => {
+    const text = String(v || "").trim();
+    if (!text) return;
+    variants.add(text);
+  };
+
+  if (normalized.includes("caste")) {
+    add("Caste");
+    add("Castillejos");
+    add("PRMSU Castillejos");
+  } else if (normalized.includes("sta cruz") || normalized.includes("stacruz")) {
+    add("Sta Cruz");
+    add("PRMSU Sta. Cruz");
+    add("PRMSU Sta Cruz");
+  } else if (normalized.includes("san marcelino")) {
+    add("San Marcelino");
+    add("PRMSU San Marcelino");
+  } else if (normalized.includes("candelaria")) {
+    add("Candelaria");
+    add("PRMSU Candelaria");
+  } else if (normalized.includes("masinloc")) {
+    add("Masinloc");
+    add("PRMSU Masinloc");
+  } else if (normalized.includes("botolan")) {
+    add("Botolan");
+    add("PRMSU Botolan");
+  } else if (normalized.includes("iba")) {
+    add("Iba");
+    add("IBA");
+    add("PRMSU Iba");
+  } else {
+    add(adminCampus);
+    add(`PRMSU ${adminCampus}`);
+  }
+
+  return Array.from(variants);
+}
+
+const ADMIN_CAMPUS_VARIANTS = buildCampusVariants(ADMIN_CAMPUS);
+const ADMIN_CAMPUS_VARIANT_TOKENS = new Set(
+  ADMIN_CAMPUS_VARIANTS.map((v) => normalizeCampusToken(v))
+);
+let adminRealtimeChannel = null;
+let adminRefreshTimer = null;
+
+function belongsToAdminCampus(campusValue) {
+  const token = normalizeCampusToken(campusValue);
+  return !!token && ADMIN_CAMPUS_VARIANT_TOKENS.has(token);
+}
+
+function showNotification(message) {
+  showBadge();
+  alert(message);
+}
+
+function scheduleAdminRefresh() {
+  if (adminRefreshTimer) clearTimeout(adminRefreshTimer);
+  adminRefreshTimer = setTimeout(() => {
+    adminRefreshTimer = null;
+    try {
+      if (typeof fetchApplicants === "function") fetchApplicants();
+      if (typeof loadDashboardStats === "function") loadDashboardStats();
+    } catch (err) {
+      console.error("Realtime refresh failed:", err);
+    }
+  }, 120);
+}
+
+function setupAdminRealtime() {
+  if (adminRealtimeChannel) return;
+  adminRealtimeChannel = supabase
+    .channel(`admin-applicants-${ADMIN_CAMPUS || "unknown"}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "applicants_iskolar" },
+      (payload) => {
+        const newCampus = payload?.new?.campus || "";
+        const oldCampus = payload?.old?.campus || "";
+        const relevant =
+          belongsToAdminCampus(newCampus) || belongsToAdminCampus(oldCampus);
+        if (!relevant) return;
+
+        if (payload?.eventType === "INSERT") {
+          const who = payload?.new?.Name || "A student";
+          showNotification(`${who} submitted a new application.`);
+        }
+
+        scheduleAdminRefresh();
+      }
+    )
+    .subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        console.log("Admin realtime connected for campus:", ADMIN_CAMPUS_VARIANTS);
+      }
+    });
+}
 // === Dashboard Statistics ===
 
 
@@ -657,7 +1004,7 @@ async function checkNewApplicationsOnLoad() {
   const { data, error } = await supabase
     .from("applicants_iskolar")
     .select("id", {count: "exact"})
-    .eq("campus", ADMIN_CAMPUS);
+    .in("campus", ADMIN_CAMPUS_VARIANTS);
 
   if (error) return;
 
@@ -729,7 +1076,7 @@ async function loadDashboardStats() {
     const { data, error } = await supabase
       .from("applicants_iskolar")
       .select("status")
-      .eq("campus", ADMIN_CAMPUS);
+      .in("campus", ADMIN_CAMPUS_VARIANTS);
 
     if (error) throw error;
 
@@ -757,6 +1104,8 @@ async function loadDashboardStats() {
 
 // Call this function on page load
 loadDashboardStats();
+checkNewApplicationsOnLoad();
+setupAdminRealtime();
 
 
     // === Scholarship Modal Logic ===
@@ -885,8 +1234,7 @@ adminForm.addEventListener("submit", async (e) => {
     email: adminForm.adminEmail.value.trim(),
     password: adminForm.adminPassword.value.trim(),
     phone_number: adminForm.adminPhone.value.trim(),
-    campus: adminForm.adminCampus.value,
-    role: adminForm.adminRole.value  // <-- now dynamic
+    campus: adminForm.adminCampus.value
   };
 
   const { error } = await supabase
@@ -902,21 +1250,6 @@ adminForm.addEventListener("submit", async (e) => {
     adminModal.style.display = "none";
   }
 });
-
-
-
-    const themeToggle = document.getElementById("theme-toggle");
-    themeToggle.addEventListener("click", () => {
-      const currentTheme = document.documentElement.getAttribute("data-theme");
-      if (currentTheme === "dark") {
-        document.documentElement.removeAttribute("data-theme");
-        themeToggle.textContent = "Dark";
-      } else {
-        document.documentElement.setAttribute("data-theme", "dark");
-        themeToggle.textContent = "Light";
-      }
-    });
-
     async function fetchScholarships() {
       const { data, error } = await supabase
         .from("scholarships")
@@ -1061,7 +1394,7 @@ async function fetchApplicants() {
   const { data, error } = await supabase
     .from("applicants_iskolar")
     .select("*")
-    .eq("campus", ADMIN_CAMPUS)
+    .in("campus", ADMIN_CAMPUS_VARIANTS)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -1107,6 +1440,13 @@ async function fetchApplicants() {
   // Render only visible applicants
   visibleApplicants.forEach((app, index) => {
     const status = app.status || "Pending";
+    const normalizedStatus = String(status).trim().toLowerCase();
+    const statusClass =
+      normalizedStatus === "processing" ? "status-processing" :
+      normalizedStatus === "pending" ? "status-pending" :
+      normalizedStatus === "approved" ? "status-approved" :
+      normalizedStatus === "rejected" ? "status-rejected" :
+      "status-default";
 
     const tr = document.createElement("tr");
     tr.setAttribute("data-id", app.id);
@@ -1123,11 +1463,7 @@ async function fetchApplicants() {
         </button>
       </td>
       <td>
-        <span class="status-pill" style="${
-          status.toLowerCase() === "processing"
-            ? "background:#fef9c3; padding:4px 8px; border-radius:8px;"
-            : "background:#e5e7eb; padding:4px 8px; border-radius:8px;"
-        }">
+        <span class="status-pill ${statusClass}">
           ${status}
         </span>
       </td>
@@ -1310,6 +1646,31 @@ async function confirmAction(){
   if (!pendingAction) return;
   const { id, newStatus, app } = pendingAction;
   const message = (document.getElementById('actionMessage').value || '').trim();
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const API_BASE = isLocal
+    ? 'http://127.0.0.1:8787'
+    : 'https://easekolar.vercel.app/api';
+  const statusMessage = message || `Your application is now ${newStatus}.`;
+  const deliveryLogs = [];
+
+  async function postJsonWithFallback(endpoints, payload){
+    let lastError = 'No response from all endpoints.';
+    for (const endpoint of endpoints) {
+      try {
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (resp.ok) return { ok: true, endpoint };
+        const bodyText = await resp.text().catch(() => '');
+        lastError = `${endpoint} -> HTTP ${resp.status}${bodyText ? `: ${bodyText.slice(0, 220)}` : ''}`;
+      } catch (err) {
+        lastError = `${endpoint} -> ${String(err?.message || err)}`;
+      }
+    }
+    return { ok: false, error: lastError };
+  }
 
   // 1) Update status and store message (in-app notice uses this field)
   const { error: updateError } = await supabase
@@ -1342,33 +1703,60 @@ async function confirmAction(){
 
   // 3) Immediate SMS via local API (Processing/Approved/Rejected)
   try {
-const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const API_BASE = isLocal
-  ? 'http://127.0.0.1:8787'
-  : 'https://easekolar.vercel.app/api';
     const toNorm = normalizePhonePH(app.contact_number || '');
     if (toNorm) {
-      await fetch(`${API_BASE}/sms/send`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    applicant_id: id,
-    email: app.email || null,
-    to: toNorm,
-    message: message || `Your application is now ${newStatus}.`,
-    status: newStatus,
-  }),
-});
+      const smsEndpoints = isLocal
+        ? [`${API_BASE}/sms/send`, 'https://easekolar.vercel.app/api/sms/send']
+        : [`${API_BASE}/sms/send`];
+      const smsResult = await postJsonWithFallback(smsEndpoints, {
+        applicant_id: id,
+        email: app.email || null,
+        to: toNorm,
+        message: statusMessage,
+        status: newStatus,
+      });
+      if (smsResult.ok) deliveryLogs.push(`SMS: sent via ${smsResult.endpoint}`);
+      else deliveryLogs.push(`SMS: failed (${smsResult.error})`);
     } else {
       console.warn('Invalid phone for applicant id=', id);
+      deliveryLogs.push('SMS: skipped (invalid or missing phone number)');
     }
   } catch (e) {
     console.warn('Local API send error:', e);
+    deliveryLogs.push(`SMS: failed (${String(e?.message || e)})`);
+  }
+
+  // 4) Email mirror of the same status message
+  try {
+    const toEmail = String(app.email || '').trim();
+    if (toEmail) {
+      const subject = `Scholarship Update: ${newStatus} - ${app.scholarship_program || 'Application'}`;
+      const emailPayload = {
+        to: toEmail,
+        subject,
+        message: statusMessage,
+      };
+      const emailEndpoints = isLocal
+        ? [`${API_BASE}/email/send`, 'https://easekolar.vercel.app/api/email/send']
+        : [`${API_BASE}/email/send`];
+      const emailResult = await postJsonWithFallback(emailEndpoints, emailPayload);
+      if (emailResult.ok) deliveryLogs.push(`Email: sent via ${emailResult.endpoint}`);
+      else {
+        console.warn('Email send failed for applicant id=', id);
+        deliveryLogs.push(`Email: failed (${emailResult.error})`);
+      }
+    } else {
+      console.warn('No email address for applicant id=', id);
+      deliveryLogs.push('Email: skipped (missing email address)');
+    }
+  } catch (e) {
+    console.warn('Email send error:', e);
+    deliveryLogs.push(`Email: failed (${String(e?.message || e)})`);
   }
 
   closeActionModal();
   fetchApplicants();
-  alert(`Status updated to "${newStatus}".`);
+  alert(`Status updated to "${newStatus}".\n${deliveryLogs.join('\n')}`);
 }
 
 
@@ -1380,5 +1768,6 @@ window.closeActionModal = closeActionModal;
 window.confirmAction = confirmAction;
 </script>
   
+  <script src="shared/autocomplete-off.js" defer></script>
 </body>
 </html>

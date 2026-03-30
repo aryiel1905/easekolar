@@ -126,9 +126,49 @@
     footer{max-width:var(--max); margin:60px auto 40px; padding:0 20px; color:var(--text-muted); text-align:center}
 
     /* === Embedded Application (used when opened from student.html) === */
-    .app-embed{ display:none; max-width:var(--max); margin:24px auto; padding:0 20px }
-    .app-embed .frame-wrap{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:18px; overflow:hidden; box-shadow:var(--shadow-1) }
+    .app-embed{ display:none; width:100%; max-width:100%; margin:12px 0; padding:0 8px; background:transparent; border:0; border-radius:0; overflow:visible; box-shadow:none }
     .app-embed iframe{ width:100%; height:80vh; border:0; background:transparent }
+    .app-embed.flat-mode{
+      max-width:100% !important;
+      margin:0 !important;
+      padding:0 6px !important;
+      background:transparent !important;
+      border:0 !important;
+      border-radius:0 !important;
+      box-shadow:none !important;
+      overflow:visible !important;
+    }
+    .app-embed.flat-mode iframe{
+      display:block;
+      height:auto;
+    }
+    html.embedded .app-embed{
+      max-width:100%;
+      margin:0;
+      padding:0;
+    }
+    html.embedded .app-embed{
+      background:transparent;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+      overflow:visible;
+    }
+    html.embedded .app-embed iframe{
+      height:auto;
+      display:block;
+    }
+    html.embedded body{
+      min-height: 0;
+    }
+    html.embedded .section{
+      margin: 8px auto;
+      padding: 0 8px;
+    }
+    html.embedded footer{
+      margin: 8px auto 10px;
+      padding: 0 8px;
+    }
 
     /* ===== Modal ===== */
     .modal{display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; align-items:center; justify-content:center; padding:20px}
@@ -252,6 +292,52 @@ html.embedded .floating-apply{
   border-radius: 8px;   /* optional: round corners */
 }
 
+/* In-app notification prompts (match student prompt style) */
+.notice-host{
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 9999;
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+.notice-item{
+  min-width: 280px;
+  max-width: min(420px, calc(100vw - 36px));
+  background: var(--card, #ffffff);
+  color: var(--text-strong, #0f274b);
+  border: 1px solid var(--border-tint, #dbe7fb);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(15, 39, 75, .14);
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: start;
+  pointer-events: auto;
+  animation: noticeIn .2s ease;
+}
+.notice-item.success{ border-color: #86efac; }
+.notice-item.error{ border-color: #fca5a5; }
+.notice-item.info{ border-color: #93c5fd; }
+.notice-item i{
+  margin-top: 2px;
+  font-size: 14px;
+}
+.notice-item.success i{ color: #166534; }
+.notice-item.error i{ color: #b91c1c; }
+.notice-item.info i{ color: #1d4ed8; }
+.notice-item .msg{
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+@keyframes noticeIn{
+  from{ opacity: 0; transform: translateY(-6px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+
 
   </style>
 </head>
@@ -299,10 +385,10 @@ html.embedded .floating-apply{
     <p class="lead">Choose from programs designed to support your education.</p>
 
     <!-- Search bar + live results (added) -->
-    <div class="search-row" role="search" aria-label="Filter scholarships">
+    <div class="search-row" role="search" aria-label="Search for scholarships">
       <input id="schSearchBox" class="search-field" type="search"
-             placeholder="Filter by name, benefits, eligibility…">
-      <button id="schSearchBtn" class="search-action">Filter</button>
+             placeholder="Search by name, benefits, eligibility…">
+      <button id="schSearchBtn" class="search-action">Search</button>
     </div>
     <div id="resultMeta" class="result-meta" aria-live="polite"></div>
 
@@ -315,9 +401,7 @@ html.embedded .floating-apply{
 
   <!-- Embedded Application (used when opened from student.html) -->
   <section id="appEmbed" class="app-embed" aria-live="polite">
-    <div class="frame-wrap">
-      <iframe id="appFrame" title="Scholarship Application"></iframe>
-    </div>
+    <iframe id="appFrame" title="Scholarship Application"></iframe>
   </section>
 
 <section class="section floating-apply">
@@ -353,14 +437,7 @@ html.embedded .floating-apply{
   <!-- Floating Theme Toggle -->
   <button class="theme-fab" id="themeToggle" aria-label="Switch to light mode" title="Toggle Light/Dark">☀️</button>
 
-<!-- Global Notice Modal -->
-<div id="noticeModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[3000]">
-  <div class="bg-white dark:bg-[#121b2d] rounded-2xl shadow-xl w-[90%] max-w-sm p-6 text-center">
-    <h2 id="noticeTitle" class="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100">Notice</h2>
-    <p id="noticeMsg" class="text-gray-700 dark:text-gray-300 mb-5"></p>
-    <button id="noticeClose" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-all">OK</button>
-  </div>
-</div>
+<div id="noticeHost" class="notice-host" aria-live="polite" aria-atomic="true"></div>
 
 
   <script>
@@ -411,6 +488,9 @@ html.embedded .floating-apply{
     const modalDescription = document.getElementById('modalDescription');
     const modalEligibility = document.getElementById('modalEligibility');
     const modalBenefits = document.getElementById('modalBenefits');
+    let selectedScholarshipName = "";
+    let selectedScholarshipId = "";
+    let selectedScholarshipRequirements = "";
    
     function closeModal(){ modal.style.display = 'none'; }
 
@@ -590,7 +670,395 @@ const SUPABASE_URL = "https://qdrnqkoozsloeqzxpgha.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcm5xa29venNsb2VxenhwZ2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1ODQ5MjgsImV4cCI6MjA3NTE2MDkyOH0.E4Lp4LtyvRfFoImUkZMFyVBM7sro4aoNlQEa7sUIsIs";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+function normalizeScholarshipRequirements(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((v) => {
+        if (v && typeof v === "object") {
+          return (
+            v.name ??
+            v.label ??
+            v.title ??
+            v.document ??
+            v.requirement ??
+            Object.values(v)[0] ??
+            ""
+          );
+        }
+        return String(v ?? "");
+      })
+      .map((v) => String(v).trim())
+      .filter(Boolean);
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value).map((v) => String(v).trim()).filter(Boolean);
+  }
+  const raw = String(value || "").trim();
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return normalizeScholarshipRequirements(parsed);
+  } catch (_) {}
+  return raw
+    .replace(/^\{|\}$/g, "")
+    .split(/\r?\n|,|;|\|/)
+    .map((v) => v.trim().replace(/^"+|"+$/g, ""))
+    .filter(Boolean);
+}
+
+function extractScholarshipRequirements(sch) {
+  if (!sch || typeof sch !== "object") return [];
+  const candidates = [
+    sch.requirements,
+    sch.requirement,
+    sch.requirements_list,
+    sch.required_requirement,
+    sch.docs_required,
+    sch.documents,
+    sch.upload_requirements,
+    sch.required_docs,
+    sch.required_documents,
+    sch.documents_required
+  ];
+  for (const candidate of candidates) {
+    const reqs = normalizeScholarshipRequirements(candidate);
+    if (reqs.length) return reqs;
+  }
+  for (const [k, v] of Object.entries(sch)) {
+    if (!/require|document|doc/i.test(String(k))) continue;
+    const reqs = normalizeScholarshipRequirements(v);
+    if (reqs.length) return reqs;
+  }
+  return [];
+}
+
+function getCardSelectionPayload(programName) {
+  const target = (programName || "").trim().toLowerCase();
+  if (!target) return { id: "", requirements: [] };
+  const card = Array.from(document.querySelectorAll(".grid .card")).find((c) => {
+    const title = (c.querySelector("h3")?.textContent || "").trim().toLowerCase();
+    return title === target;
+  });
+  if (!card) return { id: "", requirements: [] };
+  const id = String(card.dataset.scholarshipId || "").trim();
+  let requirements = normalizeScholarshipRequirements(card.dataset.benefits || "[]");
+  if (!requirements.length) {
+    requirements = normalizeScholarshipRequirements(card.dataset.requirementsRaw || "[]");
+  }
+  return { id, requirements };
+}
+
+function buildApplicationUrl(program, scholarshipId, requirements, theme) {
+  const normalizedReqs = normalizeScholarshipRequirements(requirements);
+  return `application.html?v=${Date.now()}&embed=1&program=${encodeURIComponent(program || "")}&program_id=${encodeURIComponent(String(scholarshipId || ""))}&requirements=${encodeURIComponent(JSON.stringify(normalizedReqs))}&theme=${theme}`;
+}
+
+function sendApplicationContext(frame, program, scholarshipId, requirements) {
+  if (!frame?.contentWindow) return;
+  const payload = {
+    type: "easekolar-application-context",
+    program: String(program || ""),
+    program_id: String(scholarshipId || ""),
+    requirements: normalizeScholarshipRequirements(requirements)
+  };
+  const fire = () => {
+    try {
+      frame.contentWindow.postMessage(payload, window.location.origin);
+    } catch (_) {}
+  };
+  fire();
+  [120, 300, 650, 1100].forEach((ms) => setTimeout(fire, ms));
+}
+
+function forceRenderRequirementsInApp(frame, requirements) {
+  if (!frame) return false;
+  const reqs = normalizeScholarshipRequirements(requirements);
+  if (!reqs.length) return false;
+
+  const render = () => {
+    try {
+      const doc = frame.contentDocument || frame.contentWindow?.document;
+      if (!doc) return false;
+      const uploads = doc.getElementById("reqUploads");
+      const hint = doc.getElementById("reqHint");
+      const container = doc.getElementById("requirementsContainer");
+      if (!uploads || !container) return false;
+
+      uploads.innerHTML = "";
+      uploads.style.display = "grid";
+      uploads.style.gridTemplateColumns = "repeat(auto-fit, minmax(200px, 1fr))";
+      uploads.style.gap = "1rem";
+      container.style.display = "block";
+      if (hint) hint.textContent = "";
+
+      reqs.forEach((req, idx) => {
+        const cell = doc.createElement("div");
+
+        const label = doc.createElement("label");
+        label.textContent = req;
+        label.className = "req-label";
+
+        const fileLabel = doc.createElement("label");
+        fileLabel.className = "file";
+        fileLabel.setAttribute("for", `req_file_forced_${idx}`);
+        fileLabel.innerHTML = `
+          <strong id="req_file_forced_label_${idx}">Select file</strong>
+          <span class="muted">PDF, JPG or PNG</span>
+        `;
+
+        const input = doc.createElement("input");
+        input.type = "file";
+        input.accept = ".pdf,.jpg,.jpeg,.png";
+        input.id = `req_file_forced_${idx}`;
+        input.name = String(req || "").replace(/\s+/g, "_").toLowerCase();
+        input.className = "sr-only";
+        input.required = true;
+
+        input.addEventListener("change", () => {
+          const file = input.files?.[0];
+          const textEl = doc.getElementById(`req_file_forced_label_${idx}`);
+          if (textEl) textEl.textContent = file?.name || "Select file";
+        });
+
+        fileLabel.appendChild(input);
+        cell.appendChild(label);
+        cell.appendChild(fileLabel);
+        uploads.appendChild(cell);
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  const done = render();
+  if (done) return true;
+  [120, 280, 550, 900, 1400].forEach((ms) => setTimeout(render, ms));
+  return false;
+}
+
+function normalizeCampusForStorage(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const normalized = text
+    .toLowerCase()
+    .replace(/^prmsu\s*/i, "")
+    .replace(/\./g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const map = {
+    "iba": "PRMSU Iba",
+    "castillejos": "PRMSU Castillejos",
+    "caste": "PRMSU Castillejos",
+    "san marcelino": "PRMSU San Marcelino",
+    "botolan": "PRMSU Botolan",
+    "candelaria": "PRMSU Candelaria",
+    "masinloc": "PRMSU Masinloc",
+    "sta cruz": "PRMSU Sta. Cruz",
+    "stacruz": "PRMSU Sta. Cruz"
+  };
+  return map[normalized] || text;
+}
+
+function setEmbeddedResultMessage(frameDoc, message, state = "info") {
+  const el = frameDoc?.getElementById("resultMessage");
+  if (!el) return;
+  el.textContent = String(message || "");
+  if (state === "error") el.style.color = "#ef4444";
+  else if (state === "success") el.style.color = "#10b981";
+  else el.style.color = "#2563eb";
+}
+
+function returnToAvailableScholarships() {
+  const list = document.getElementById("list");
+  const embed = document.getElementById("appEmbed");
+  const frame = document.getElementById("appFrame");
+  if (list) list.style.display = "block";
+  if (embed) embed.style.display = "none";
+  if (frame) frame.src = "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showSubmissionSuccessPrompt(refId) {
+  showNotice("Application submitted successfully.", "Success", () => returnToAvailableScholarships());
+}
+
+async function attachParentSubmitBridge(frame, programName = "", scholarshipId = "", requirements = []) {
+  const doc = frame?.contentDocument || frame?.contentWindow?.document;
+  if (!doc) return;
+  const form = doc.getElementById("applicationForm");
+  const submitBtn = doc.getElementById("submitBtn");
+  if (!form || !submitBtn) return;
+  if (form.dataset.parentSubmitBound === "true") return;
+
+  form.dataset.parentSubmitBound = "true";
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+    setEmbeddedResultMessage(doc, "Submitting application...", "info");
+
+    try {
+      const formData = new FormData(form);
+      const selectedProgram = formData.get("scholarshipProgram") || programName || "";
+      const reqUploads = doc.getElementById("reqUploads");
+
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData?.user?.id || `anon_${Date.now()}`;
+
+      async function uploadFileAndGetUrl(file, prefix = "requirements") {
+        if (!file) return null;
+        const path = `${prefix}/${uid}/${Date.now()}_${file.name}`;
+        const { error: upErr } = await supabase.storage
+          .from("applicants_iskolar")
+          .upload(path, file, { cacheControl: "3600", upsert: false });
+        if (upErr) throw upErr;
+        const { data } = supabase.storage.from("applicants_iskolar").getPublicUrl(path);
+        return data?.publicUrl ?? null;
+      }
+
+      const dynamicUrls = {};
+      const fileInputs = Array.from(reqUploads?.querySelectorAll("input[type=file]") || []);
+      for (const inp of fileInputs) {
+        const f = inp.files?.[0];
+        if (f) dynamicUrls[inp.name] = await uploadFileAndGetUrl(f, "requirements");
+      }
+      if (fileInputs.length > 0 && Object.keys(dynamicUrls).length < fileInputs.length) {
+        setEmbeddedResultMessage(doc, "Please upload all required documents.", "error");
+        return;
+      }
+
+      const payload = {
+        scholarship_program: String(selectedProgram || "").trim(),
+        Name: (formData.get("fullName") || "").toString().trim(),
+        email: (formData.get("email") || "").toString().trim(),
+        contact_number: (formData.get("contactNumber") || "").toString().trim(),
+        birthdate: (formData.get("birthdate") || "").toString(),
+        address: (formData.get("address") || "").toString().trim(),
+        campus: normalizeCampusForStorage((formData.get("campus") || "").toString()),
+        department: (formData.get("department") || "").toString().trim(),
+        course: (formData.get("course") || "").toString().trim(),
+        year_level: (formData.get("yearLevel") || "").toString().trim(),
+        mother_name: (formData.get("mothername") || "").toString().trim(),
+        mother_number: (formData.get("motherno") || "").toString().trim(),
+        father_name: (formData.get("fathername") || "").toString().trim(),
+        father_number: (formData.get("fatherno") || "").toString().trim(),
+        status: "Pending",
+        upload_requirements: JSON.stringify(dynamicUrls),
+      };
+
+      const { data: inserted, error } = await supabase
+        .from("applicants_iskolar")
+        .insert([payload])
+        .select("id")
+        .maybeSingle();
+
+      if (error || !inserted) {
+        console.error("Parent bridge insert error:", error);
+        setEmbeddedResultMessage(doc, "Failed to submit: " + (error?.message || "Insert failed"), "error");
+        return;
+      }
+
+      setEmbeddedResultMessage(doc, "", "success");
+      form.reset();
+      if (reqUploads) reqUploads.innerHTML = "";
+      const reqHint = doc.getElementById("reqHint");
+      if (reqHint) reqHint.textContent = "Select a scholarship program to load required uploads.";
+      window.showNotice?.(
+        `Application submitted successfully (Ref #${inserted.id}).`,
+        "Success",
+        () => returnToAvailableScholarships()
+      );
+    } catch (err) {
+      console.error("Parent bridge submit failed:", err);
+      setEmbeddedResultMessage(doc, "Unexpected error: " + (err?.message || err), "error");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Application";
+    }
+  }, true);
+}
+
 async function loadAdminScholarships(){
+  const SCHOLARSHIP_BASELINE = [
+    {
+      id: "baseline-ngcp",
+      name: "National Grid Corporation of the Philippines",
+      grade: "90",
+      requirements: ["CERTIFIED TRUE COPY OF CERTIFICATE OF REGISTRATION", "CERTIFICATE OF RESIDENCY"],
+      amount: "15,000 per semester",
+      description: ""
+    },
+    {
+      id: "baseline-tdp",
+      name: "TULONG DUNONG PROGRAM",
+      grade: "90",
+      requirements: ["CERTIFIED TRUE COPY OF CERTIFICATE OF REGISTRATION", "CERTIFICATE OF INDIGENCY"],
+      amount: "7,500 to 15,000 per semester",
+      description: ""
+    },
+    {
+      id: "baseline-acef-da",
+      name: "DA ACEF-GIAHEP (Agricultural Competitiveness Enhancement Fund - Grants-in-Aid for Higher Education Program)",
+      grade: "90",
+      requirements: ["CERTIFIED TRUE COPY OF CERTIFICATE OF REGISTRATION", "CERTIFICATE OF INDIGENCY"],
+      amount: "10,000 per semester",
+      description: ""
+    },
+    {
+      id: "baseline-tes",
+      name: "Tertiary Education Subsidy (TES)",
+      grade: "90",
+      requirements: ["CERTIFICATE OF GRADES", "CERTIFIED TRUE COPY OF CERTIFICATE OF REGISTRATION", "CERTIFICATE OF INDIGENCY"],
+      amount: "40,000 per academic year",
+      description: ""
+    },
+    {
+      id: "baseline-dost",
+      name: "Department of Science and Technology - Science Education Institute or DOST-SEI",
+      grade: "90",
+      requirements: ["CERTIFIED TRUE COPY OF CERTIFICATE OF REGISTRATION", "SCHOOL ID", "CERTIFICATE OF INDIGENCY"],
+      amount: "40,000 per academic year",
+      description: ""
+    },
+    {
+      id: "baseline-tap",
+      name: "Tulong-Agri Program (TAP)",
+      grade: "90",
+      requirements: ["CERTIFIED TRUE COPY OF CERTIFICATE OF REGISTRATION", "POLICE CLEARANCE", "CERTIFICATE OF INDIGENCY"],
+      amount: "47,000 per academic year",
+      description: ""
+    },
+    {
+      id: "baseline-acef",
+      name: "ACEF-GIAHEP (Agricultural Competitiveness Enhancement Fund - Grants-in-Aid for Higher Education Program)",
+      grade: "90",
+      requirements: ["CERTIFIED TRUE COPY OF CERTIFICATE OF REGISTRATION", "CERTIFICATE OF INDIGENCY"],
+      amount: "40,000 per academic year",
+      description: ""
+    },
+    {
+      id: "baseline-engine",
+      name: "San Miguel Global Power Foundation's ENGINE (SMCGP ENGINE)",
+      grade: "90",
+      requirements: ["CERTIFIED TRUE COPY OF CERTIFICATE OF REGISTRATION", "PHILIPPINES STATISTIC AUTHORITY CERTIFICATE OF BIRTH"],
+      amount: "15,000 per semester",
+      description: ""
+    },
+    {
+      id: "baseline-mpcl",
+      name: "San Miguel Global Power (SMGP) Foundation's MPCL (Masinloc Power Corporation Limited)",
+      grade: "90",
+      requirements: ["CERTIFIED TRUE COPY OF CERTIFICATE OF REGISTRATION", "CERTIFICATE OF INDIGENCY"],
+      amount: "15,000 per semester",
+      description: ""
+    }
+  ];
+  const normalizeScholarshipName = (name) =>
+    String(name || "").toLowerCase().replace(/\s+/g, " ").trim();
+
   const { data, error } = await supabase
     .from("scholarships")
     .select("*")
@@ -598,13 +1066,27 @@ async function loadAdminScholarships(){
 
   if (error){
     console.error("Error fetching scholarships:", error);
-    return;
   }
 
   const grid = document.querySelector(".grid");
   if(!grid) return;
+  grid.innerHTML = "";
 
-  data.forEach(sch => {
+  const mergedByName = new Map();
+  (data || []).forEach((sch) => {
+    const key = normalizeScholarshipName(sch?.name);
+    if (!key) return;
+    mergedByName.set(key, sch);
+  });
+  SCHOLARSHIP_BASELINE.forEach((sch) => {
+    const key = normalizeScholarshipName(sch?.name);
+    if (!key || mergedByName.has(key)) return;
+    mergedByName.set(key, sch);
+  });
+
+  const mergedScholarships = Array.from(mergedByName.values());
+
+  mergedScholarships.forEach(sch => {
     const card = document.createElement("article");
     card.className = "card";
     card.setAttribute("tabindex", "0"); // make it keyboard-focusable
@@ -618,7 +1100,37 @@ async function loadAdminScholarships(){
     : "");
 
     card.dataset.eligibility = sch.grade ? "Applicants must meet the required General Weighted Average (GWA) of " + sch.grade + " " + " and grades no less than 90 per subject." : "";
-    card.dataset.benefits = sch.requirements || "";
+    let schRequirements = extractScholarshipRequirements(sch);
+    if (!schRequirements.length) {
+      schRequirements = normalizeScholarshipRequirements(
+        sch.requirements ??
+        sch.requirement ??
+        sch.requirements_list ??
+        sch.required_requirement ??
+        sch.docs_required ??
+        sch.documents ??
+        sch.upload_requirements ??
+        sch.required_docs ??
+        sch.required_documents ??
+        sch.documents_required ??
+        []
+      );
+    }
+    card.dataset.scholarshipId = String(sch.id || "");
+    card.dataset.benefits = JSON.stringify(schRequirements);
+    card.dataset.requirementsRaw = JSON.stringify(
+      sch.requirements ??
+      sch.requirement ??
+      sch.requirements_list ??
+      sch.required_requirement ??
+      sch.docs_required ??
+      sch.documents ??
+      sch.upload_requirements ??
+      sch.required_docs ??
+      sch.required_documents ??
+      sch.documents_required ??
+      []
+    );
 
 
     card.innerHTML = `
@@ -631,36 +1143,142 @@ async function loadAdminScholarships(){
       inlineBtn.className = 'apply-btn';
       inlineBtn.type = 'button';
       inlineBtn.textContent = 'Apply now';
-      inlineBtn.addEventListener('click', (e) => {
+      inlineBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        selectedScholarshipName = card.dataset.title || sch.name || "";
+        selectedScholarshipId = String(sch.id || "");
+        selectedScholarshipRequirements = JSON.stringify(schRequirements);
+        try {
+          sessionStorage.setItem("selectedScholarshipPayload", JSON.stringify({
+            id: selectedScholarshipId,
+            name: selectedScholarshipName,
+            requirements: schRequirements
+          }));
+        } catch (_) {}
         const list = document.getElementById('list');
         const embed = document.getElementById('appEmbed');
         const frame = document.getElementById('appFrame');
         if (!embed || !frame || !list) return;
         list.style.display = 'none';
         embed.style.display = 'block';
-        frame.src = 'application.html';
+        embed.classList.add('flat-mode');
         const programName = card.dataset.title || sch.name;
-        const setProgram = () => {
+        let profile = null;
+        (async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user?.email) {
+              const { data: p } = await supabase
+                .from("applicants_main")
+                .select("full_name, email, phone_number, birthdate, campus, college, course")
+                .eq("email", user.email)
+                .maybeSingle();
+              profile = p || null;
+            }
+          } catch (_) {
+            profile = null;
+          }
+        })();
+
+        const normalize = (v) => (v || "").toString().trim().toLowerCase();
+        const normalizeDate = (v) => {
+          if (!v) return "";
+          const raw = String(v).trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+          if (raw.includes("T")) {
+            const d = raw.split("T")[0];
+            if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+          }
+          return "";
+        };
+        const ensureOptionSelected = (sel, value) => {
+          if (!sel || !value) return false;
+          Array.from(sel.options).forEach((opt) => {
+            const t = (opt.textContent || "").trim().toLowerCase();
+            if (t.startsWith("loading")) {
+              opt.remove();
+            }
+          });
+          const wanted = normalize(value);
+          for (let i = 0; i < sel.options.length; i++) {
+            const opt = sel.options[i];
+            if (normalize(opt.value) === wanted || normalize(opt.textContent) === wanted) {
+              sel.selectedIndex = i;
+              sel.classList.add("prefilled-select");
+              return true;
+            }
+          }
+          const opt = sel.ownerDocument.createElement("option");
+          opt.value = value;
+          opt.textContent = value;
+          sel.appendChild(opt);
+          sel.value = value;
+          sel.classList.add("prefilled-select");
+          return true;
+        };
+        const setInputIfEmpty = (doc, id, value) => {
+          if (!value) return;
+          const el = doc.getElementById(id);
+          if (el && !el.value) el.value = value;
+        };
+
+        const applyFrameData = () => {
           try {
             const doc = frame.contentDocument || frame.contentWindow.document;
             if (!doc) return false;
             const sel = doc.getElementById('scholarshipProgram');
-            if (!sel || !sel.options || sel.options.length === 0) return false;
-            for (let i = 0; i < sel.options.length; i++) {
-              if ((sel.options[i].textContent || '').trim() === (programName || '').trim()) {
-                sel.selectedIndex = i;
-                sel.dispatchEvent(new Event('change'));
-                return true;
-              }
+            if (!sel || !sel.options) return false;
+
+            if (!profile) {
+              try {
+                const cached = JSON.parse(localStorage.getItem("applicantProfileCache") || "{}");
+                if (cached && cached.email) profile = cached;
+              } catch (_) {}
             }
+
+            const pickedProgram = ensureOptionSelected(sel, programName);
+            if (pickedProgram) sel.dispatchEvent(new Event('change'));
+
+            if (profile) {
+              setInputIfEmpty(doc, "fullName", profile.full_name || "");
+              setInputIfEmpty(doc, "email", profile.email || "");
+              setInputIfEmpty(doc, "contactNumber", profile.phone_number || "");
+              setInputIfEmpty(doc, "birthdate", normalizeDate(profile.birthdate));
+
+              const campusSel = doc.getElementById("campus");
+              const deptSel = doc.getElementById("department");
+              const courseSel = doc.getElementById("course");
+
+              if (ensureOptionSelected(campusSel, profile.campus || "")) {
+                campusSel.dispatchEvent(new Event("change"));
+              }
+              if (ensureOptionSelected(deptSel, profile.college || "")) {
+                deptSel.dispatchEvent(new Event("change"));
+              }
+              ensureOptionSelected(courseSel, profile.course || "");
+            }
+
+            return pickedProgram;
+          } catch (_) {
             return false;
-          } catch (_) { return false; }
+          }
         };
+
+        const currentTheme = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+        frame.src = buildApplicationUrl(programName, String(sch.id || ""), schRequirements, currentTheme);
         frame.addEventListener('load', () => {
-          let tries = 0, max = 60; // ~7s
-          const loop = () => { if (setProgram() || ++tries >= max) return; setTimeout(loop, 120); };
-          loop();
+          attachAppFrameAutoHeight(frame);
+          forwardThemeToAppFrame();
+          sendApplicationContext(frame, programName, String(sch.id || ""), schRequirements);
+          forceRenderRequirementsInApp(frame, schRequirements);
+          attachParentSubmitBridge(frame, programName, String(sch.id || ""), schRequirements);
+          let tries = 0;
+          const max = 60; // ~9s
+          const timer = setInterval(() => {
+            const ok = applyFrameData();
+            tries += 1;
+            if (ok || tries >= max) clearInterval(timer);
+          }, 150);
         }, { once: true });
       });
       card.appendChild(inlineBtn);
@@ -669,10 +1287,27 @@ async function loadAdminScholarships(){
     // clicking the card opens modal
     card.addEventListener("click", () => {
       const modal = document.getElementById("scholarshipModal");
+      selectedScholarshipName = card.dataset.title || "";
+      selectedScholarshipId = String(sch.id || "");
+      selectedScholarshipRequirements = JSON.stringify(schRequirements);
+      try {
+        sessionStorage.setItem("selectedScholarshipPayload", JSON.stringify({
+          id: selectedScholarshipId,
+          name: selectedScholarshipName,
+          requirements: schRequirements
+        }));
+      } catch (_) {}
       document.getElementById("modalTitle").textContent = card.dataset.title;
       document.getElementById("modalDescription").textContent = card.dataset.description;
       document.getElementById("modalEligibility").textContent = card.dataset.eligibility;
-      document.getElementById("modalBenefits").textContent = card.dataset.benefits;
+      let modalBenefitsText = "";
+      try {
+        const parsed = JSON.parse(card.dataset.benefits || "[]");
+        modalBenefitsText = Array.isArray(parsed) ? parsed.join(", ") : String(parsed || "");
+      } catch (_) {
+        modalBenefitsText = card.dataset.benefits || "";
+      }
+      document.getElementById("modalBenefits").textContent = modalBenefitsText;
       modal.style.display = "flex";
     });
 
@@ -691,10 +1326,221 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <script>
   // Detect if loaded inside student.html iframe
-  const isInStudent = window.location !== window.parent.location &&
-                      document.referrer.includes("student.html");
+  const isInStudent = window.self !== window.top ||
+                      new URLSearchParams(window.location.search).get("embed") === "1";
   if (isInStudent) {
     try { document.documentElement.classList.add('embedded'); } catch (_) {}
+  }
+
+  function getCurrentThemeMode() {
+    if (isInStudent) {
+      try {
+        const parentDark = window.parent?.document?.body?.classList?.contains('dark');
+        return parentDark ? 'dark' : 'light';
+      } catch (_) {}
+    }
+    const saved = localStorage.getItem('theme') || localStorage.getItem('scholarship_theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+
+  function syncThemeFromStudentParent() {
+    if (!isInStudent) return;
+    let inferred = null;
+    try {
+      const parentDoc = window.parent?.document;
+      if (parentDoc?.body?.classList?.contains('dark')) inferred = 'dark';
+      else if (parentDoc?.body) inferred = 'light';
+    } catch (_) {}
+    if (!inferred) return;
+    if (syncThemeFromStudentParent._lastTheme === inferred) return;
+    syncThemeFromStudentParent._lastTheme = inferred;
+    try {
+      localStorage.setItem('theme', inferred);
+      localStorage.setItem('scholarship_theme', inferred);
+    } catch (_) {}
+    try {
+      document.documentElement.setAttribute('data-theme', inferred);
+    } catch (_) {}
+    forwardThemeToAppFrame();
+  }
+
+  function forwardThemeToAppFrame() {
+    try {
+      const appFrame = document.getElementById('appFrame');
+      if (!appFrame?.contentWindow) return;
+      const theme = getCurrentThemeMode();
+      appFrame.contentWindow.postMessage({ type: 'easekolar-theme', theme }, window.location.origin);
+    } catch (_) {}
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.origin && event.origin !== window.location.origin) return;
+    const data = event.data || {};
+    if (data.type === 'easekolar-theme') {
+      const theme = data.theme === 'light' ? 'light' : 'dark';
+      try {
+        localStorage.setItem('theme', theme);
+        localStorage.setItem('scholarship_theme', theme);
+      } catch (_) {}
+      try { document.documentElement.setAttribute('data-theme', theme); } catch (_) {}
+      forwardThemeToAppFrame();
+      return;
+    }
+    if (data.type === 'easekolar-theme-request') {
+      forwardThemeToAppFrame();
+      return;
+    }
+    if (data.type === 'easekolar-application-submitted') {
+      showSubmissionSuccessPrompt(data.ref_id || "");
+      return;
+    }
+  });
+
+  if (isInStudent) {
+    syncThemeFromStudentParent();
+    setInterval(syncThemeFromStudentParent, 300);
+  }
+
+  function attachAppFrameAutoHeight(frame) {
+    if (!frame) return;
+    const doc = frame.contentDocument || frame.contentWindow?.document;
+    if (!doc) return;
+
+    try {
+      if (doc.documentElement) doc.documentElement.style.overflow = "hidden";
+      if (doc.body) {
+        doc.body.style.margin = "0";
+        doc.body.style.background = "transparent";
+        doc.body.style.overflow = "hidden";
+      }
+    } catch (_) {}
+
+    const resize = () => {
+      try {
+        const innerDoc = frame.contentDocument || frame.contentWindow?.document;
+        if (!innerDoc) return;
+        const h = Math.max(
+          innerDoc.body?.scrollHeight || 0,
+          innerDoc.documentElement?.scrollHeight || 0
+        );
+        if (h) frame.style.height = `${h}px`;
+      } catch (_) {}
+    };
+
+    resize();
+    setTimeout(resize, 80);
+    setTimeout(resize, 260);
+    setTimeout(resize, 700);
+
+    try {
+      if (frame._appResizeObserver) frame._appResizeObserver.disconnect();
+      let rafId = 0;
+      const mo = new MutationObserver(() => {
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => {
+          rafId = 0;
+          resize();
+        });
+      });
+      mo.observe(doc.documentElement, { childList: true, subtree: true });
+      frame._appResizeObserver = mo;
+    } catch (_) {}
+  }
+
+  function forcePopulateEmbeddedApplication(frame, selectedProgram) {
+    if (!frame) return;
+
+    const normalize = (v) => (v || "").toString().trim().toLowerCase();
+    const normalizeDate = (v) => {
+      if (!v) return "";
+      const raw = String(v).trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+      if (raw.includes("T")) {
+        const dateOnly = raw.split("T")[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return dateOnly;
+      }
+      return "";
+    };
+    const cachedProfile = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("applicantProfileCache") || "{}");
+      } catch (_) {
+        return {};
+      }
+    })();
+
+    const apply = () => {
+      try {
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        if (!doc) return false;
+
+        const selectOption = (sel, value) => {
+          if (!sel || !value) return false;
+          Array.from(sel.options).forEach((opt) => {
+            const t = (opt.textContent || "").trim().toLowerCase();
+            if (t.startsWith("loading")) opt.remove();
+          });
+
+          const target = normalize(value);
+          for (let i = 0; i < sel.options.length; i++) {
+            const opt = sel.options[i];
+            if (normalize(opt.value) === target || normalize(opt.textContent) === target) {
+              sel.selectedIndex = i;
+              sel.classList.add("prefilled-select");
+              return true;
+            }
+          }
+
+          const custom = doc.createElement("option");
+          custom.value = value;
+          custom.textContent = value;
+          sel.appendChild(custom);
+          sel.value = value;
+          sel.classList.add("prefilled-select");
+          return true;
+        };
+
+        const setIfEmpty = (id, value) => {
+          if (!value) return;
+          const el = doc.getElementById(id);
+          if (el && !el.value) el.value = value;
+        };
+
+        const programSel = doc.getElementById("scholarshipProgram");
+        const programOk = selectOption(programSel, selectedProgram);
+        if (programOk) programSel.dispatchEvent(new Event("change"));
+
+        setIfEmpty("fullName", cachedProfile.full_name || "");
+        setIfEmpty("email", cachedProfile.email || "");
+        setIfEmpty("contactNumber", cachedProfile.phone_number || "");
+        setIfEmpty("birthdate", normalizeDate(cachedProfile.birthdate || ""));
+
+        const campusSel = doc.getElementById("campus");
+        const deptSel = doc.getElementById("department");
+        const courseSel = doc.getElementById("course");
+
+        if (selectOption(campusSel, cachedProfile.campus || "")) {
+          campusSel.dispatchEvent(new Event("change"));
+        }
+        if (selectOption(deptSel, cachedProfile.college || "")) {
+          deptSel.dispatchEvent(new Event("change"));
+        }
+        selectOption(courseSel, cachedProfile.course || "");
+
+        return programOk;
+      } catch (_) {
+        return false;
+      }
+    };
+
+    let tries = 0;
+    const max = 60; // ~9s
+    const timer = setInterval(() => {
+      const ok = apply();
+      tries += 1;
+      if (ok || tries >= max) clearInterval(timer);
+    }, 150);
   }
 
   function closeModal(){ modal.style.display = 'none'; }
@@ -704,7 +1550,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // If inside student.html → skip login restrictions
     if (isInStudent) {
-      window.location.href = "application.html";
+      let selectedProgram = (selectedScholarshipName || "").trim();
+      if (!selectedProgram || selectedProgram.toLowerCase() === "scholarship") {
+        selectedProgram = (document.getElementById("modalTitle")?.textContent || "").trim();
+      }
+      if (!selectedProgram || selectedProgram.toLowerCase() === "scholarship") {
+        selectedProgram = (document.querySelector(".grid .card h3")?.textContent || "").trim();
+      }
+      if (!selectedProgram) {
+        showNotice("Please select a scholarship first.");
+        return;
+      }
+      if (!selectedScholarshipId || !selectedScholarshipRequirements) {
+        const fallback = getCardSelectionPayload(selectedProgram);
+        if (!selectedScholarshipId && fallback.id) {
+          selectedScholarshipId = fallback.id;
+        }
+        if (!selectedScholarshipRequirements && fallback.requirements.length) {
+          selectedScholarshipRequirements = JSON.stringify(fallback.requirements);
+        }
+      }
+      const normalizedSelectedReqs = normalizeScholarshipRequirements(selectedScholarshipRequirements || "[]");
+      try {
+        sessionStorage.setItem("selectedScholarshipPayload", JSON.stringify({
+          id: String(selectedScholarshipId || ""),
+          name: selectedProgram,
+          requirements: normalizedSelectedReqs
+        }));
+      } catch (_) {}
+      const list = document.getElementById("list");
+      const embed = document.getElementById("appEmbed");
+      const frame = document.getElementById("appFrame");
+      if (embed && frame && list) {
+        list.style.display = "none";
+        embed.style.display = "block";
+        embed.classList.add("flat-mode");
+        const currentTheme = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+        frame.src = buildApplicationUrl(selectedProgram, selectedScholarshipId || "", normalizedSelectedReqs, currentTheme);
+        frame.addEventListener("load", () => {
+          attachAppFrameAutoHeight(frame);
+          forwardThemeToAppFrame();
+          sendApplicationContext(frame, selectedProgram, selectedScholarshipId || "", normalizedSelectedReqs);
+          forceRenderRequirementsInApp(frame, normalizedSelectedReqs);
+          forcePopulateEmbeddedApplication(frame, selectedProgram);
+          attachParentSubmitBridge(frame, selectedProgram, selectedScholarshipId || "", normalizedSelectedReqs);
+        }, { once: true });
+      } else {
+        const currentTheme = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+        window.location.href = buildApplicationUrl(selectedProgram, selectedScholarshipId || "", normalizedSelectedReqs, currentTheme);
+      }
       return;
     }
 
@@ -712,7 +1606,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const isLoggedIn = localStorage.getItem('loggedIn');
     const userRole = localStorage.getItem('role');
     if (isLoggedIn === 'true' && userRole === 'applicant') {
-      window.location.href = 'application.html';
+      let selectedProgram = (selectedScholarshipName || "").trim();
+      if (!selectedProgram || selectedProgram.toLowerCase() === "scholarship") {
+        selectedProgram = (document.getElementById("modalTitle")?.textContent || "").trim();
+      }
+      if (!selectedProgram || selectedProgram.toLowerCase() === "scholarship") {
+        selectedProgram = (document.querySelector(".grid .card h3")?.textContent || "").trim();
+      }
+      if (!selectedScholarshipId || !selectedScholarshipRequirements) {
+        const fallback = getCardSelectionPayload(selectedProgram);
+        if (!selectedScholarshipId && fallback.id) {
+          selectedScholarshipId = fallback.id;
+        }
+        if (!selectedScholarshipRequirements && fallback.requirements.length) {
+          selectedScholarshipRequirements = JSON.stringify(fallback.requirements);
+        }
+      }
+      const normalizedSelectedReqs = normalizeScholarshipRequirements(selectedScholarshipRequirements || "[]");
+      try {
+        sessionStorage.setItem("selectedScholarshipPayload", JSON.stringify({
+          id: String(selectedScholarshipId || ""),
+          name: selectedProgram,
+          requirements: normalizedSelectedReqs
+        }));
+      } catch (_) {}
+      if (selectedProgram) {
+        const currentTheme = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+        window.location.href = buildApplicationUrl(selectedProgram, selectedScholarshipId || "", normalizedSelectedReqs, currentTheme);
+      } else {
+        window.location.href = 'application.html';
+      }
     } else if (isLoggedIn === 'true' && userRole === 'admin') {
       showNotice('Only applicants can apply for scholarships.');
     } else {
@@ -757,32 +1680,68 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // === Global Notice Modal ===
-const noticeModal = document.getElementById("noticeModal");
-const noticeTitle = document.getElementById("noticeTitle");
-const noticeMsg = document.getElementById("noticeMsg");
-const noticeClose = document.getElementById("noticeClose");
+  // === Prompt-style notice (toast) ===
+const noticeHost = document.getElementById("noticeHost");
 
-function showNotice(message, title = "Notice") {
-  noticeTitle.textContent = title;
-  noticeMsg.textContent = message;
-  noticeModal.classList.remove("hidden");
-  noticeModal.classList.add("flex");
-  document.body.style.overflow = "hidden"; // prevent background scroll
+function showNotice(message, title = "Notice", onClose = null) {
+  const label = String(title || "").toLowerCase();
+  const type = label.includes("success")
+    ? "success"
+    : label.includes("error") || label.includes("fail")
+      ? "error"
+      : "info";
+
+  // Prefer top-level student prompt host so notice stays visible while parent page scrolls.
+  try {
+    const topShowPrompt = window.top?.showPrompt;
+    if (typeof topShowPrompt === "function") {
+      const timeout = type === "success" ? 1800 : 2800;
+      topShowPrompt(String(message || "").trim(), type, timeout);
+      if (typeof onClose === "function") {
+        window.setTimeout(() => {
+          try { onClose(); } catch (_) {}
+        }, timeout);
+      }
+      return;
+    }
+  } catch (_) {}
+
+  if (!noticeHost) return;
+
+  const item = document.createElement("div");
+  item.className = `notice-item ${type}`;
+  const icon = type === "success"
+    ? "fa-solid fa-circle-check"
+    : type === "error"
+      ? "fa-solid fa-circle-exclamation"
+      : "fa-solid fa-circle-info";
+  item.innerHTML = `<i class="${icon}" aria-hidden="true"></i><div class="msg">${String(message || "").trim()}</div>`;
+  noticeHost.appendChild(item);
+
+  const timeout = type === "success" ? 1800 : 2800;
+  window.setTimeout(() => {
+    item.style.opacity = "0";
+    item.style.transform = "translateY(-4px)";
+    item.style.transition = "opacity .18s ease, transform .18s ease";
+    window.setTimeout(() => item.remove(), 180);
+    if (typeof onClose === "function") {
+      try { onClose(); } catch (_) {}
+    }
+  }, timeout);
 }
 
 function hideNotice() {
-  noticeModal.classList.add("hidden");
-  noticeModal.classList.remove("flex");
-  document.body.style.overflow = "";
+  // No-op for compatibility with existing calls.
 }
 
-noticeClose.addEventListener("click", hideNotice);
-noticeModal.addEventListener("click", (e) => {
-  if (e.target === noticeModal) hideNotice();
-});
+// Explicitly expose prompt helpers for embedded child-frame direct calls.
+window.showNotice = showNotice;
+window.hideNotice = hideNotice;
+window.returnToAvailableScholarships = returnToAvailableScholarships;
+window.showSubmissionSuccessPrompt = showSubmissionSuccessPrompt;
 
 </script>
  
+  <script src="shared/autocomplete-off.js" defer></script>
 </body>
 </html>
